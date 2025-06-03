@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { HeaderComponent } from './components/header/header';
+import { HeaderComponent } from './components/header/header.component';
 import { HeroComponent } from './components/hero/hero';
 import { StatsComponent } from './components/stats/stats';
 import { SwapComponent } from './components/swap/swap';
 import { FooterComponent } from './components/footer/footer';
 import { NotificationComponent } from './components/notification/notification';
-import { WalletModalComponent } from './components/wallet-modal/wallet-modal';
+import { WalletModalComponent } from './components/wallet-modal/wallet-modal.component';
 
 @Component({
   selector: 'app-root',

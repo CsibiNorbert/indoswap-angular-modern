@@ -11,6 +11,7 @@ interface WalletOption {
   readonly isPopular?: boolean;
   readonly isAvailable: boolean;
   readonly installUrl?: string;
+  readonly status?: string;
 }
 
 @Component({
@@ -21,7 +22,7 @@ interface WalletOption {
   styleUrls: ['./wallet-modal.scss']
 })
 export class WalletModalComponent {
-  private readonly walletService = inject(WalletService);
+  readonly walletService = inject(WalletService);
   private readonly notificationService = inject(NotificationService);
 
   readonly isModalOpen = this.walletService.isModalOpen;
@@ -35,7 +36,16 @@ export class WalletModalComponent {
       description: 'Connect using browser extension',
       isPopular: true,
       isAvailable: this.walletService.isMetaMaskInstalled(),
-      installUrl: 'https://metamask.io/download/'
+      installUrl: 'https://metamask.io/download/',
+      status: this.getWalletStatus({
+        id: 'metamask',
+        name: 'MetaMask',
+        icon: '🦊',
+        description: 'Connect using browser extension',
+        isPopular: true,
+        isAvailable: this.walletService.isMetaMaskInstalled(),
+        installUrl: 'https://metamask.io/download/'
+      })
     },
     {
       id: 'walletconnect',
@@ -44,7 +54,8 @@ export class WalletModalComponent {
       description: 'Connect using mobile wallet',
       isPopular: true,
       isAvailable: false, // Will implement later
-      installUrl: undefined
+      installUrl: undefined,
+      status: 'coming-soon'
     },
     {
       id: 'coinbase',
@@ -53,7 +64,8 @@ export class WalletModalComponent {
       description: 'Connect using Coinbase Wallet',
       isPopular: false,
       isAvailable: false, // Will implement later
-      installUrl: undefined
+      installUrl: undefined,
+      status: 'coming-soon'
     }
   ]);
 
@@ -239,4 +251,34 @@ export class WalletModalComponent {
   trackByWallet(index: number, wallet: WalletOption): string {
     return wallet.id;
   }
+
+  // Add missing methods that the template expects
+  trackByWalletId = this.trackByWallet; // Alias for compatibility
+
+  selectWallet(wallet: WalletOption): void {
+    this.onWalletSelect(wallet.id);
+  }
+
+  getButtonState(wallet: WalletOption): { disabled: boolean; loading: boolean; class: string; text: string } {
+    const status = this.getWalletStatus(wallet);
+    const isConnecting = this.connectingWallet() === wallet.id;
+    
+    return {
+      disabled: this.isWalletDisabled(wallet),
+      loading: isConnecting,
+      class: `status-${status}`,
+      text: this.getWalletButtonText(wallet)
+    };
+  }
+
+  // Fix the missing status property
+  private addStatusToWallets(): readonly (WalletOption & { status: string })[] {
+    return this.walletOptions().map(wallet => ({
+      ...wallet,
+      status: this.getWalletStatus(wallet)
+    }));
+  }
+
+  // Update walletOptions to include status
+  readonly walletOptionsWithStatus = computed(() => this.addStatusToWallets());
 } 

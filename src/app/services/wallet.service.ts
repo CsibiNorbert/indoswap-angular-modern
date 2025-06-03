@@ -316,7 +316,7 @@ export class WalletService {
       console.log('✅ WalletService: Wallet state updated');
 
       // Fetch balance
-      await this.updateBalance();
+      await this.fetchBalanceOnConnection();
 
       // Success notifications
       this.notificationService.showSuccess(
@@ -411,6 +411,49 @@ export class WalletService {
     } finally {
       this._isRefreshingBalance.set(false);
     }
+  }
+
+  // Force immediate balance fetch on connection
+  async fetchBalanceOnConnection(): Promise<void> {
+    console.log('🔄 WalletService: Fetching balance immediately after connection...');
+    
+    if (!this.ethereum || !this.address()) {
+      console.warn('🚨 WalletService: Cannot fetch balance - no ethereum or address');
+      return;
+    }
+
+    try {
+      // Force balance fetch
+      await this.updateBalance();
+      
+      // If balance is still 0, try alternative method
+      if (this.balance() === '0' || this.balance() === '0.0000') {
+        console.log('🔄 WalletService: Balance is 0, trying alternative fetch...');
+        
+        // Wait a bit and try again (sometimes MetaMask needs a moment)
+        setTimeout(async () => {
+          await this.updateBalance();
+        }, 1000);
+      }
+      
+    } catch (error) {
+      console.error('🚨 WalletService: Failed to fetch balance on connection:', error);
+    }
+  }
+
+  // Public method for refreshing balance (used by header component)
+  async refreshBalance(): Promise<void> {
+    console.log('🔄 WalletService: Manual balance refresh requested...');
+    await this.updateBalance();
+  }
+
+  // Get network name for display
+  getNetworkName(): string {
+    const chainId = this.chainId();
+    if (chainId === BSC_MAINNET_CHAIN_ID) {
+      return 'BSC Mainnet';
+    }
+    return SUPPORTED_NETWORKS[chainId]?.chainName || 'Unknown Network';
   }
 
   // Disconnect wallet with debugging
