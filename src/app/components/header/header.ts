@@ -11,7 +11,6 @@ import { NotificationService } from '../../services/notification.service';
       <div class="logo">
         <div class="logo-text-container">
           <div class="logo-text">IndoSwap</div>
-          <div class="logo-badge">Robo DeFi</div>
         </div>
       </div>
 
