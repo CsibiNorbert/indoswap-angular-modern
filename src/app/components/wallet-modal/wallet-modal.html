@@ -1,12 +1,11 @@
 <div 
   class="wallet-modal-overlay"
-  *ngIf="isOpen()"
+  *ngIf="isModalOpen()"
   (click)="onBackdropClick($event)"
-  (keydown)="onKeydown($event)"
   role="dialog"
   aria-modal="true"
   aria-labelledby="modal-title"
-  [attr.aria-hidden]="!isOpen()">
+  [attr.aria-hidden]="!isModalOpen()">
   
   <div class="wallet-modal">
     <!-- Modal Header -->
@@ -15,7 +14,7 @@
       <button 
         type="button"
         class="close-button"
-        (click)="closeModal()"
+        (click)="onCloseModal()"
         aria-label="Close wallet selection modal">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.3 5.71L12 12.01 5.7 5.71 4.29 7.12 10.59 13.42 4.29 19.72 5.7 21.13 12 14.83 18.3 21.13 19.71 19.72 13.41 13.42 19.71 7.12z"/>
@@ -25,27 +24,47 @@
 
     <!-- Modal Description -->
     <p class="modal-description">
-      Choose your preferred wallet to connect to IndoSwap and start trading
+      Choose your preferred wallet to connect to IndoSwap and start trading on BSC
     </p>
+
+    <!-- Debug Test Button (Remove after fixing) -->
+    <div class="debug-section">
+      <button 
+        type="button"
+        class="test-button"
+        (click)="onTestConnection()"
+        title="Test direct MetaMask connection">
+        🧪 Test MetaMask Connection
+      </button>
+      <small class="debug-note">Debug button - Check console for logs</small>
+    </div>
 
     <!-- Wallet Options -->
     <div class="wallet-options">
       <button
         type="button"
         class="wallet-option"
-        *ngFor="let wallet of walletOptions(); trackBy: trackByWalletId"
-        [class]="'wallet-option-' + wallet.status"
-        [disabled]="getButtonState(wallet).disabled"
-        (click)="selectWallet(wallet)"
+        *ngFor="let wallet of walletOptions(); trackBy: trackByWallet"
+        [class]="'wallet-option-' + getWalletStatus(wallet)"
+        [disabled]="isWalletDisabled(wallet)"
+        (click)="onWalletSelect(wallet.id)"
         [attr.aria-label]="'Connect using ' + wallet.name">
         
         <!-- Wallet Icon -->
         <div class="wallet-icon">
           <span class="icon-emoji" aria-hidden="true">{{ wallet.icon }}</span>
           
-          <!-- Popular Badge for MetaMask -->
-          <div class="popular-badge" *ngIf="wallet.id === 'metamask'" aria-label="Most popular">
+          <!-- Popular Badge -->
+          <div class="popular-badge" *ngIf="wallet.isPopular" aria-label="Popular choice">
             <span class="badge-text">Popular</span>
+          </div>
+
+          <!-- Status Badge -->
+          <div 
+            class="status-badge" 
+            *ngIf="getWalletStatus(wallet) !== 'available'"
+            [attr.aria-label]="getWalletButtonText(wallet)">
+            {{ getWalletStatusIcon(wallet) }}
           </div>
         </div>
 
@@ -53,6 +72,14 @@
         <div class="wallet-info">
           <div class="wallet-name">{{ wallet.name }}</div>
           <div class="wallet-description">{{ wallet.description }}</div>
+          
+          <!-- Additional status info -->
+          <div class="wallet-status-text" *ngIf="getWalletStatus(wallet) === 'not-installed'">
+            <small>Browser extension required</small>
+          </div>
+          <div class="wallet-status-text" *ngIf="getWalletStatus(wallet) === 'coming-soon'">
+            <small>Integration in development</small>
+          </div>
         </div>
 
         <!-- Connection Status -->
@@ -60,19 +87,17 @@
           <!-- Loading Spinner -->
           <div 
             class="loading-spinner" 
-            *ngIf="getButtonState(wallet).loading"
+            *ngIf="connectingWallet() === wallet.id"
             aria-hidden="true">
           </div>
           
           <!-- Status Text -->
-          <span class="status-text" [class]="getButtonState(wallet).class">
-            {{ getButtonState(wallet).text }}
-          </span>
+          <span class="status-text">{{ getWalletButtonText(wallet) }}</span>
           
           <!-- Arrow Icon for available wallets -->
           <svg 
             class="arrow-icon" 
-            *ngIf="wallet.status === 'available' && !getButtonState(wallet).loading"
+            *ngIf="getWalletStatus(wallet) === 'available'"
             width="20" 
             height="20" 
             viewBox="0 0 24 24" 
@@ -81,10 +106,10 @@
             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
           </svg>
 
-          <!-- Install Icon for not-installed wallets -->
+          <!-- Install Icon for MetaMask -->
           <svg 
             class="install-icon" 
-            *ngIf="wallet.status === 'not-installed'"
+            *ngIf="getWalletStatus(wallet) === 'not-installed'"
             width="20" 
             height="20" 
             viewBox="0 0 24 24" 
@@ -96,6 +121,15 @@
       </button>
     </div>
 
+    <!-- Network Notice -->
+    <div class="network-notice">
+      <div class="notice-icon" aria-hidden="true">🌐</div>
+      <div class="notice-text">
+        <strong>BSC Network:</strong> 
+        IndoSwap operates on Binance Smart Chain. We'll help you switch networks if needed.
+      </div>
+    </div>
+
     <!-- Security Notice -->
     <div class="security-notice">
       <div class="notice-icon" aria-hidden="true">🔒</div>
@@ -105,24 +139,16 @@
       </div>
     </div>
 
-    <!-- MetaMask Installation Help -->
-    <div class="modal-footer" *ngIf="!walletService.isMetaMaskInstalled()">
-      <div class="help-section">
-        <div class="help-icon" aria-hidden="true">ℹ️</div>
-        <div class="help-text">
-          <strong>New to MetaMask?</strong> 
-          MetaMask is a browser extension that allows you to securely store and manage your crypto assets.
-        </div>
-      </div>
-    </div>
-
-    <!-- Regular Footer for when MetaMask is installed -->
-    <div class="modal-footer" *ngIf="walletService.isMetaMaskInstalled()">
-      <button type="button" class="help-link" disabled>
+    <!-- Help Link -->
+    <div class="modal-footer">
+      <button 
+        type="button" 
+        class="help-link"
+        (click)="onHelpClick()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
         </svg>
-        Additional wallets coming soon
+        New to wallets? Get help
       </button>
     </div>
   </div>

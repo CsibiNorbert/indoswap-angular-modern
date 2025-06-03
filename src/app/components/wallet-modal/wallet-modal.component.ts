@@ -1,15 +1,16 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WalletService } from '../../services/wallet.service';
+import { NotificationService } from '../../services/notification.service';
 
 interface WalletOption {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  status: 'available' | 'not-installed' | 'coming-soon';
-  buttonText: string;
-  buttonClass: string;
+  readonly id: string;
+  readonly name: string;
+  readonly icon: string;
+  readonly description: string;
+  readonly isPopular?: boolean;
+  readonly isAvailable: boolean;
+  readonly installUrl?: string;
 }
 
 @Component({
@@ -20,105 +21,222 @@ interface WalletOption {
   styleUrls: ['./wallet-modal.scss']
 })
 export class WalletModalComponent {
-  // Expose walletService as public for template access
-  readonly walletService = inject(WalletService);
+  private readonly walletService = inject(WalletService);
+  private readonly notificationService = inject(NotificationService);
 
-  // Reactive wallet options based on MetaMask availability
-  readonly walletOptions = computed((): WalletOption[] => {
-    const isMetaMaskInstalled = this.walletService.isMetaMaskInstalled();
-    
-    return [
-      {
-        id: 'metamask',
-        name: 'MetaMask',
-        icon: '🦊',
-        description: isMetaMaskInstalled 
-          ? 'Connect using browser wallet' 
-          : 'Browser wallet not detected',
-        status: isMetaMaskInstalled ? 'available' : 'not-installed',
-        buttonText: isMetaMaskInstalled ? 'Connect' : 'Install',
-        buttonClass: isMetaMaskInstalled ? 'connect' : 'install'
-      },
-      {
-        id: 'walletconnect',
-        name: 'WalletConnect',
-        icon: '🔗',
-        description: 'Connect with mobile wallet',
-        status: 'coming-soon',
-        buttonText: 'Coming Soon',
-        buttonClass: 'disabled'
-      },
-      {
-        id: 'coinbase',
-        name: 'Coinbase Wallet',
-        icon: '🔵',
-        description: 'Connect with Coinbase',
-        status: 'coming-soon',
-        buttonText: 'Coming Soon',
-        buttonClass: 'disabled'
-      }
-    ];
-  });
-
-  // Modal state
-  readonly isOpen = this.walletService.isModalOpen;
-  readonly connectingWalletId = this.walletService.connectingWalletId;
+  readonly isModalOpen = this.walletService.isModalOpen;
   readonly isConnecting = this.walletService.isConnecting;
 
-  // Close modal
-  closeModal(): void {
+  readonly walletOptions = computed((): readonly WalletOption[] => [
+    {
+      id: 'metamask',
+      name: 'MetaMask',
+      icon: '🦊',
+      description: 'Connect using browser extension',
+      isPopular: true,
+      isAvailable: this.walletService.isMetaMaskInstalled(),
+      installUrl: 'https://metamask.io/download/'
+    },
+    {
+      id: 'walletconnect',
+      name: 'WalletConnect',
+      icon: '📱',
+      description: 'Connect using mobile wallet',
+      isPopular: true,
+      isAvailable: false, // Will implement later
+      installUrl: undefined
+    },
+    {
+      id: 'coinbase',
+      name: 'Coinbase Wallet',
+      icon: '🔵',
+      description: 'Connect using Coinbase Wallet',
+      isPopular: false,
+      isAvailable: false, // Will implement later
+      installUrl: undefined
+    }
+  ]);
+
+  readonly connectingWallet = computed(() => 
+    this.walletService.connectingWalletId()
+  );
+
+  onBackdropClick(event: Event): void {
+    if (event.target === event.currentTarget) {
+      this.onCloseModal();
+    }
+  }
+
+  onCloseModal(): void {
     this.walletService.closeModal();
   }
 
-  // Handle backdrop click
-  onBackdropClick(event: Event): void {
-    if (event.target === event.currentTarget) {
-      this.closeModal();
-    }
-  }
-
-  // Handle wallet selection
-  async selectWallet(wallet: WalletOption): Promise<void> {
-    if (wallet.status === 'coming-soon') {
+  async onWalletSelect(walletId: string): Promise<void> {
+    const wallet = this.walletOptions().find(w => w.id === walletId);
+    if (!wallet) {
+      console.error('🚨 Wallet not found:', walletId);
       return;
     }
 
-    if (wallet.status === 'not-installed' && wallet.id === 'metamask') {
-      this.walletService.openMetaMaskInstall();
-      return;
-    }
+    console.log('🔌 User selected wallet:', wallet.name);
 
-    if (wallet.status === 'available') {
-      await this.walletService.connectWallet(wallet.id);
+    // Handle MetaMask specifically
+    if (walletId === 'metamask') {
+      if (!wallet.isAvailable) {
+        this.onInstallWallet(wallet);
+        return;
+      }
+
+      try {
+        console.log('🦊 Attempting MetaMask connection...');
+        this.notificationService.showInfo('🔌 Connecting to MetaMask...');
+        
+        await this.walletService.connectWallet(walletId);
+        
+        this.notificationService.showSuccess(
+          `🎉 ${wallet.name} connected successfully! Welcome to IndoSwap!`
+        );
+        console.log('✅ MetaMask connection successful');
+        
+      } catch (error: any) {
+        console.error('🚨 MetaMask connection failed:', error);
+        this.handleConnectionError(error.message || 'Unknown error', wallet.name);
+      }
+    } else {
+      // For other wallets, show coming soon message
+      console.log('ℹ️ Other wallet selected:', wallet.name);
+      this.notificationService.showInfo(
+        `${wallet.name} integration coming soon! 🚀 Stay tuned for updates.`
+      );
     }
   }
 
-  // Get button state for a wallet
-  getButtonState(wallet: WalletOption): {
-    text: string;
-    class: string;
-    disabled: boolean;
-    loading: boolean;
-  } {
-    const isConnecting = this.connectingWalletId() === wallet.id;
+  onInstallWallet(wallet: WalletOption): void {
+    console.log('📥 Install wallet requested:', wallet.name);
     
-    return {
-      text: isConnecting ? 'Connecting...' : wallet.buttonText,
-      class: wallet.buttonClass + (isConnecting ? ' connecting' : ''),
-      disabled: wallet.status === 'coming-soon' || isConnecting,
-      loading: isConnecting
-    };
-  }
-
-  // Track by function for performance
-  trackByWalletId(index: number, wallet: WalletOption): string {
-    return wallet.id;
-  }
-
-  // Handle keyboard navigation
-  onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      this.closeModal();
+    if (wallet.installUrl) {
+      this.notificationService.showInfo(
+        `${wallet.name} is not installed. Redirecting to installation page...`
+      );
+      
+      setTimeout(() => {
+        window.open(wallet.installUrl, '_blank');
+      }, 1500);
+    } else {
+      this.notificationService.showInfo(
+        `${wallet.name} installation guide coming soon!`
+      );
     }
+  }
+
+  // Add test connection method for debugging
+  async onTestConnection(): Promise<void> {
+    console.log('🧪 Testing direct MetaMask connection...');
+    
+    try {
+      if (!(window as any).ethereum) {
+        throw new Error('MetaMask not detected');
+      }
+
+      const accounts = await (window as any).ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+
+      console.log('✅ Direct test successful:', accounts);
+      this.notificationService.showSuccess('🧪 Direct connection test successful!');
+      
+    } catch (error: any) {
+      console.error('🚨 Direct test failed:', error);
+      this.notificationService.showError(`🧪 Test failed: ${error.message}`);
+    }
+  }
+
+  private handleConnectionError(errorMessage: string, walletName: string): void {
+    console.log('🚨 Handling connection error:', errorMessage);
+    
+    // Handle specific error types
+    if (errorMessage.includes('rejected') || errorMessage.includes('denied') || errorMessage.includes('User rejected')) {
+      this.notificationService.showInfo(
+        '❌ Connection cancelled. You can try connecting again anytime.'
+      );
+    } else if (errorMessage.includes('unlock')) {
+      this.notificationService.showInfo(
+        '🔒 Please unlock your MetaMask wallet and try again.'
+      );
+    } else if (errorMessage.includes('install') || errorMessage.includes('not detected')) {
+      this.notificationService.showError(
+        '🦊 MetaMask not found. Please install MetaMask browser extension.'
+      );
+    } else if (errorMessage.includes('network')) {
+      this.notificationService.showInfo(
+        '🌐 Network switching required. Please approve the network change in MetaMask.'
+      );
+    } else if (errorMessage.includes('undefined') || errorMessage.includes('null')) {
+      this.notificationService.showError(
+        '🔧 Connection error. Please refresh the page and try again.'
+      );
+    } else {
+      this.notificationService.showError(
+        `❌ Failed to connect to ${walletName}. Please try again.`
+      );
+    }
+  }
+
+  getWalletStatus(wallet: WalletOption): string {
+    if (this.connectingWallet() === wallet.id) {
+      return 'connecting';
+    }
+    if (!wallet.isAvailable && wallet.id === 'metamask') {
+      return 'not-installed';
+    }
+    if (!wallet.isAvailable) {
+      return 'coming-soon';
+    }
+    return 'available';
+  }
+
+  getWalletButtonText(wallet: WalletOption): string {
+    const status = this.getWalletStatus(wallet);
+    
+    switch (status) {
+      case 'connecting':
+        return 'Connecting...';
+      case 'not-installed':
+        return 'Install';
+      case 'coming-soon':
+        return 'Coming Soon';
+      default:
+        return 'Connect';
+    }
+  }
+
+  getWalletStatusIcon(wallet: WalletOption): string {
+    const status = this.getWalletStatus(wallet);
+    
+    switch (status) {
+      case 'connecting':
+        return '⏳';
+      case 'not-installed':
+        return '⬇️';
+      case 'coming-soon':
+        return '🔜';
+      default:
+        return '✅';
+    }
+  }
+
+  isWalletDisabled(wallet: WalletOption): boolean {
+    const status = this.getWalletStatus(wallet);
+    return this.isConnecting() || status === 'coming-soon';
+  }
+
+  onHelpClick(): void {
+    this.notificationService.showInfo(
+      '💡 New to crypto wallets? Check our beginner guide (coming soon) or visit metamask.io/education'
+    );
+  }
+
+  trackByWallet(index: number, wallet: WalletOption): string {
+    return wallet.id;
   }
 } 

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, NgZone } from '@angular/core';
 import { WalletState, WalletStatus } from '../models/interfaces';
 import { 
   EthereumProvider, 
@@ -20,6 +20,7 @@ import { NotificationService } from './notification.service';
 })
 export class WalletService {
   private readonly notificationService = inject(NotificationService);
+  private readonly ngZone = inject(NgZone);
 
   // Signals for reactive state management
   private readonly walletState = signal<WalletState>({
@@ -36,6 +37,7 @@ export class WalletService {
 
   // Ethereum provider
   private ethereum: EthereumProvider | null = null;
+  private isInitialized = false;
 
   // Public computed signals
   readonly isConnected = computed(() => 
@@ -100,48 +102,94 @@ export class WalletService {
   );
 
   constructor() {
+    console.log('🔧 WalletService: Initializing...');
     this.initializeProvider();
     this.checkExistingConnection();
   }
 
-  // Initialize MetaMask provider
+  // Initialize MetaMask provider with enhanced debugging
   private initializeProvider(): void {
-    const web3Window = window as Web3Window;
-    
-    if (web3Window.ethereum?.isMetaMask) {
-      this.ethereum = web3Window.ethereum;
-      this.setupEventListeners();
+    try {
+      const web3Window = window as Web3Window;
+      
+      console.log('🔍 WalletService: Checking for ethereum provider...');
+      console.log('🔍 Window.ethereum exists:', !!web3Window.ethereum);
+      console.log('🔍 Is MetaMask:', web3Window.ethereum?.isMetaMask);
+      
+      if (web3Window.ethereum?.isMetaMask) {
+        this.ethereum = web3Window.ethereum;
+        this.setupEventListeners();
+        console.log('✅ WalletService: Ethereum provider found:', {
+          isMetaMask: this.ethereum.isMetaMask,
+          chainId: this.ethereum.chainId,
+          selectedAddress: this.ethereum.selectedAddress
+        });
+      } else {
+        console.log('🚨 WalletService: No ethereum provider found');
+      }
+      
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('🚨 WalletService: Error initializing provider:', error);
+      this.isInitialized = true;
     }
   }
 
-  // Setup MetaMask event listeners
+  // Setup MetaMask event listeners with enhanced debugging
   private setupEventListeners(): void {
-    if (!this.ethereum) return;
-
-    // Account changes
-    this.ethereum.on(MetaMaskEvent.ACCOUNTS_CHANGED, (accounts: string[]) => {
-      this.handleAccountsChanged(accounts);
-    });
-
-    // Network changes
-    this.ethereum.on(MetaMaskEvent.CHAIN_CHANGED, (chainId: string) => {
-      this.handleChainChanged(chainId);
-    });
-
-    // Disconnection
-    this.ethereum.on(MetaMaskEvent.DISCONNECT, (error: MetaMaskError) => {
-      this.handleDisconnect(error);
-    });
-  }
-
-  // Check for existing connection on app start
-  private async checkExistingConnection(): Promise<void> {
-    if (!this.ethereum) return;
+    if (!this.ethereum) {
+      console.log('🚨 WalletService: Cannot setup event listeners - no ethereum provider');
+      return;
+    }
 
     try {
+      console.log('🎧 WalletService: Setting up event listeners...');
+
+      // Account changes
+      this.ethereum.on(MetaMaskEvent.ACCOUNTS_CHANGED, (accounts: string[]) => {
+        console.log('👤 WalletService: Accounts changed:', accounts);
+        this.ngZone.run(() => {
+          this.handleAccountsChanged(accounts);
+        });
+      });
+
+      // Network changes
+      this.ethereum.on(MetaMaskEvent.CHAIN_CHANGED, (chainId: string) => {
+        console.log('🌐 WalletService: Chain changed:', chainId);
+        this.ngZone.run(() => {
+          this.handleChainChanged(chainId);
+        });
+      });
+
+      // Disconnection
+      this.ethereum.on(MetaMaskEvent.DISCONNECT, (error: MetaMaskError) => {
+        console.log('🔌 WalletService: Disconnect event:', error);
+        this.ngZone.run(() => {
+          this.handleDisconnect(error);
+        });
+      });
+
+      console.log('✅ WalletService: Event listeners setup complete');
+    } catch (error) {
+      console.error('🚨 WalletService: Error setting up event listeners:', error);
+    }
+  }
+
+  // Check for existing connection on app start with enhanced debugging
+  private async checkExistingConnection(): Promise<void> {
+    if (!this.ethereum) {
+      console.log('ℹ️ WalletService: No ethereum provider for connection check');
+      return;
+    }
+
+    try {
+      console.log('🔍 WalletService: Checking for existing connection...');
+      
       const accounts = await this.ethereum.request({
         method: MetaMaskMethod.GET_ACCOUNTS
       });
+
+      console.log('👤 WalletService: Existing accounts:', accounts);
 
       if (accounts && accounts.length > 0) {
         const chainId = await this.ethereum.request({
@@ -150,6 +198,9 @@ export class WalletService {
 
         const chainIdDecimal = parseInt(chainId, 16);
         const address = accounts[0];
+
+        console.log('🌐 WalletService: Current chain ID:', chainIdDecimal);
+        console.log('📍 WalletService: Current address:', address);
 
         // Update wallet state
         this.walletState.set({
@@ -163,71 +214,93 @@ export class WalletService {
         if (chainIdDecimal === BSC_MAINNET_CHAIN_ID) {
           await this.updateBalance();
         }
+
+        console.log('✅ WalletService: Existing connection restored');
+      } else {
+        console.log('ℹ️ WalletService: No existing connection found');
       }
     } catch (error) {
-      console.error('Error checking existing connection:', error);
+      console.error('🚨 WalletService: Error checking existing connection:', error);
     }
   }
 
-  // Modal methods
+  // Modal methods with debugging
   showModal(): void {
+    console.log('📱 WalletService: Showing modal');
     this.modalOpen.set(true);
   }
 
   closeModal(): void {
+    console.log('❌ WalletService: Closing modal');
     this.modalOpen.set(false);
     this._connectingWalletId.set('');
   }
 
-  // MetaMask connection methods
+  // MetaMask connection methods with enhanced debugging
   isMetaMaskInstalled(): boolean {
-    return !!(window as Web3Window).ethereum?.isMetaMask;
+    const installed = !!(window as Web3Window).ethereum?.isMetaMask;
+    console.log('🦊 WalletService: MetaMask installed:', installed);
+    return installed;
   }
 
   openMetaMaskInstall(): void {
+    console.log('📥 WalletService: Opening MetaMask install page');
     window.open(METAMASK_DOWNLOAD_URL, '_blank');
   }
 
-  // Main connection method
+  // Main connection method with comprehensive debugging
   async connectWallet(walletId?: string): Promise<void> {
+    console.log('🔌 WalletService: Connect wallet called with ID:', walletId);
+
     if (!walletId) {
+      console.log('📱 WalletService: No wallet ID provided, showing modal');
       this.showModal();
       return;
     }
 
     if (walletId !== 'metamask') {
+      console.log('🚨 WalletService: Unsupported wallet:', walletId);
       this.notificationService.showError('Only MetaMask is supported currently');
       return;
     }
 
     if (!this.isMetaMaskInstalled()) {
+      console.log('🚨 WalletService: MetaMask not installed');
       this.notificationService.showError('MetaMask is not installed');
       return;
     }
 
+    console.log('🦊 WalletService: Starting MetaMask connection...');
     this._connectingWalletId.set(walletId);
     this.walletState.update(state => ({ ...state, status: 'connecting' }));
 
     try {
+      console.log('📝 WalletService: Requesting accounts...');
+      
       // Request account access
       const accounts = await this.ethereum!.request({
         method: MetaMaskMethod.REQUEST_ACCOUNTS
       });
+
+      console.log('👤 WalletService: Accounts received:', accounts);
 
       if (!accounts || accounts.length === 0) {
         throw new Error('No accounts returned from MetaMask');
       }
 
       const address = accounts[0];
+      console.log('📍 WalletService: Selected address:', address);
 
       // Get current chain ID
       const chainId = await this.ethereum!.request({
         method: MetaMaskMethod.GET_CHAIN_ID
       });
       const chainIdDecimal = parseInt(chainId, 16);
+      console.log('🌐 WalletService: Current chain ID:', chainIdDecimal);
 
       // Check if we're on BSC network
       if (chainIdDecimal !== BSC_MAINNET_CHAIN_ID) {
+        console.log('🔄 WalletService: Wrong network, switching to BSC...');
         await this.switchToBSCNetwork();
         return; // switchToBSCNetwork will handle the rest
       }
@@ -240,6 +313,8 @@ export class WalletService {
         balance: '0'
       });
 
+      console.log('✅ WalletService: Wallet state updated');
+
       // Fetch balance
       await this.updateBalance();
 
@@ -248,76 +323,100 @@ export class WalletService {
         `Connected to MetaMask: ${address.slice(0, 6)}...${address.slice(-4)}`
       );
 
+      console.log('✅ WalletService: MetaMask connection successful!');
       this.closeModal();
 
     } catch (error: any) {
+      console.error('🚨 WalletService: MetaMask connection failed:', error);
       this.handleConnectionError(error);
     }
   }
 
-  // Network switching
+  // Network switching with enhanced debugging
   async switchToBSCNetwork(): Promise<void> {
-    if (!this.ethereum) throw new Error('MetaMask not available');
+    if (!this.ethereum) {
+      console.error('🚨 WalletService: No ethereum provider for network switch');
+      throw new Error('MetaMask not available');
+    }
 
     try {
+      console.log('🔄 WalletService: Attempting to switch to BSC network...');
+      
       // Try to switch to BSC
       await this.ethereum.request({
         method: MetaMaskMethod.SWITCH_CHAIN,
         params: [{ chainId: SUPPORTED_NETWORKS[BSC_MAINNET_CHAIN_ID].chainId }]
       });
 
+      console.log('✅ WalletService: Successfully switched to BSC');
+
     } catch (switchError: any) {
+      console.log('⚠️ WalletService: Switch failed, trying to add BSC network:', switchError);
+      
       // If BSC network is not added, add it
       if (switchError.code === MetaMaskErrorCode.CHAIN_NOT_ADDED) {
         try {
+          console.log('➕ WalletService: Adding BSC network...');
           await this.ethereum.request({
             method: MetaMaskMethod.ADD_CHAIN,
             params: [SUPPORTED_NETWORKS[BSC_MAINNET_CHAIN_ID]]
           });
+          console.log('✅ WalletService: BSC network added successfully');
         } catch (addError) {
+          console.error('🚨 WalletService: Failed to add BSC network:', addError);
           throw new Error('Failed to add BSC network to MetaMask');
         }
       } else {
+        console.error('🚨 WalletService: Network switch failed:', switchError);
         throw switchError;
       }
     }
   }
 
-  // Balance management
+  // Balance management with enhanced debugging
   async updateBalance(): Promise<void> {
     if (!this.ethereum || !this.isConnected() || !this.isCorrectNetwork()) {
+      console.log('ℹ️ WalletService: Cannot update balance - conditions not met');
       return;
     }
 
+    console.log('💰 WalletService: Updating balance...');
     this._isRefreshingBalance.set(true);
 
     try {
       const address = this.address();
+      console.log('📍 WalletService: Getting balance for:', address);
+      
       const balanceWei = await this.ethereum.request({
         method: MetaMaskMethod.GET_BALANCE,
         params: [address, 'latest']
       });
 
+      console.log('💰 WalletService: Balance in Wei:', balanceWei);
+
       // Convert from Wei to BNB
       const balanceEth = this.weiToEth(balanceWei);
+      console.log('💰 WalletService: Balance in BNB:', balanceEth);
       
       this.walletState.update(state => ({
         ...state,
         balance: balanceEth
       }));
 
-      this.notificationService.showSuccess('Balance updated successfully');
+      console.log('✅ WalletService: Balance updated successfully');
 
     } catch (error) {
-      console.error('Error updating balance:', error);
+      console.error('🚨 WalletService: Error updating balance:', error);
       this.notificationService.showError('Failed to update balance');
     } finally {
       this._isRefreshingBalance.set(false);
     }
   }
 
-  // Disconnect wallet
+  // Disconnect wallet with debugging
   disconnectWallet(): void {
+    console.log('🔌 WalletService: Disconnecting wallet...');
+    
     this.walletState.set({
       status: 'disconnected',
       address: '',
@@ -327,13 +426,19 @@ export class WalletService {
     
     this.closeModal();
     this.notificationService.showInfo('Wallet disconnected');
+    console.log('✅ WalletService: Wallet disconnected');
   }
 
-  // Event handlers
+  // Event handlers with enhanced debugging
   private async handleAccountsChanged(accounts: string[]): Promise<void> {
+    console.log('👤 WalletService: Handling accounts changed:', accounts);
+    
     if (accounts.length === 0) {
+      console.log('🔌 WalletService: No accounts, disconnecting...');
       this.disconnectWallet();
     } else if (accounts[0] !== this.address()) {
+      console.log('🔄 WalletService: Account changed to:', accounts[0]);
+      
       this.walletState.update(state => ({
         ...state,
         address: accounts[0],
@@ -350,6 +455,7 @@ export class WalletService {
 
   private async handleChainChanged(chainIdHex: string): Promise<void> {
     const chainId = parseInt(chainIdHex, 16);
+    console.log('🌐 WalletService: Handling chain changed to:', chainId);
     
     this.walletState.update(state => ({
       ...state,
@@ -369,18 +475,22 @@ export class WalletService {
   }
 
   private handleDisconnect(error: MetaMaskError): void {
+    console.log('🔌 WalletService: Handling disconnect:', error);
     this.disconnectWallet();
-    console.error('MetaMask disconnected:', error);
   }
 
-  // Error handling
+  // Error handling with enhanced debugging
   private handleConnectionError(error: any): void {
+    console.error('🚨 WalletService: Handling connection error:', error);
+    
     this._connectingWalletId.set('');
     
     if (error?.code === MetaMaskErrorCode.USER_REJECTED) {
+      console.log('❌ WalletService: User rejected connection');
       this.walletState.update(state => ({ ...state, status: 'disconnected' }));
       this.notificationService.showInfo('Connection cancelled by user');
     } else {
+      console.log('🚨 WalletService: Connection error:', error?.message);
       this.walletState.update(state => ({ ...state, status: 'error' }));
       this.notificationService.showError(
         error?.message || 'Failed to connect to MetaMask'
@@ -390,13 +500,19 @@ export class WalletService {
 
   // Utility methods
   private weiToEth(weiValue: string): string {
-    const wei = BigInt(weiValue);
-    const eth = Number(wei) / Math.pow(10, 18);
-    return eth.toFixed(6);
+    try {
+      const wei = BigInt(weiValue);
+      const eth = Number(wei) / Math.pow(10, 18);
+      return eth.toFixed(6);
+    } catch (error) {
+      console.error('🚨 WalletService: Error converting Wei to ETH:', error);
+      return '0';
+    }
   }
 
   // For compatibility with existing code
   updateWalletState(updates: Partial<WalletState>): void {
+    console.log('🔄 WalletService: Updating wallet state:', updates);
     this.walletState.update(state => ({ ...state, ...updates }));
   }
 } 
