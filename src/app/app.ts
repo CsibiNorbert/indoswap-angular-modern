@@ -28,17 +28,19 @@ import { Features } from './components/features/features';
       <div class="bg-circle"></div>
     </div>
 
-    <app-header />
-
-    <div class="container">
-      <app-hero />
-      <app-stats />
-      <app-swap />
-      <app-features />
+    <div class="app">
+      <app-header />
+      <app-notification />
+      
+      <main class="main-content">
+        <app-hero />
+        <app-stats />
+        <app-swap />
+        <app-features />
+      </main>
+      
+      <app-footer />
     </div>
-
-    <app-footer />
-    <app-notification />
 
     <!-- Add the wallet modal component -->
     <app-wallet-modal />
