@@ -9,12 +9,22 @@ import { Component, signal, effect } from '@angular/core';
       <div class="container">
         <div class="hero__content">
           <h1 class="hero__title">
-            🤖 <span class="spectacular-text">SPECTACULAR ROBO COIN LANDING PAGE!</span>
+            Trade <span class="rotating-word" [style.color]="currentWordColor()">{{ currentTitleWord() }}</span> with IndoSwap
           </h1>
+          <p class="hero__subtitle">
+            The Next Generation <span class="gradient-text">DeFi Exchange</span>
+          </p>
           <p class="hero__description">
-            Experience the future of DeFi with our spectacular robo coin showcase featuring giant rotating coins, orbiting satellites, and stunning visual effects!
+            Experience lightning-fast swaps, minimal fees, and maximum security. Our advanced routing algorithm finds the best prices across multiple liquidity pools, ensuring you get more value from every trade.
           </p>
           
+          <!-- Value Propositions -->
+          <div class="hero__features">
+            <div class="feature-badge">⚡ Lightning Fast Swaps</div>
+            <div class="feature-badge">💰 Best Prices Guaranteed</div>
+            <div class="feature-badge">🛡️ Maximum Security</div>
+          </div>
+
           <!-- Main Coin Showcase Section -->
           <div class="coin-showcase">
             <div class="dual-coin-container">
@@ -23,7 +33,7 @@ import { Component, signal, effect } from '@angular/core';
                 <div class="main-coin">
                   <img 
                     src="/images/coins/coin.png" 
-                    alt="Main Robo Coin" 
+                    alt="IndoSwap Coin" 
                     class="giant-coin"
                   />
                   <div class="coin-glow-ring"></div>
@@ -43,7 +53,7 @@ import { Component, signal, effect } from '@angular/core';
                 <div class="secondary-coin">
                   <img 
                     src="/images/coins/coin.png" 
-                    alt="Secondary Robo Coin" 
+                    alt="IndoSwap Secondary Coin" 
                     class="giant-coin-secondary"
                   />
                   <div class="coin-glow-ring-secondary"></div>
@@ -59,30 +69,6 @@ import { Component, signal, effect } from '@angular/core';
               </div>
             </div>
           </div>
-
-          <!-- Enhanced Stats Display -->
-          <div class="hero__stats">
-            <div class="stat stat--enhanced">
-              <span class="stat__value">$2.4B+</span>
-              <span class="stat__label">Total Volume</span>
-              <div class="stat__particles"></div>
-            </div>
-            <div class="stat stat--enhanced">
-              <span class="stat__value">145K+</span>
-              <span class="stat__label">Active Users</span>
-              <div class="stat__particles"></div>
-            </div>
-            <div class="stat stat--enhanced">
-              <span class="stat__value">892K+</span>
-              <span class="stat__label">Transactions</span>
-              <div class="stat__particles"></div>
-            </div>
-          </div>
-          
-          <!-- Rotating Action Text -->
-          <div class="rotating-text-container">
-            <span class="rotating-text">{{ currentWord() }}</span>
-          </div>
         </div>
         
         <!-- Enhanced Visual Section -->
@@ -92,22 +78,22 @@ import { Component, signal, effect } from '@angular/core';
             <div class="floating-card floating-card--1">
               <div class="card-icon">🤖</div>
               <div class="card-content">
-                <span>AI Routing</span>
-                <span>Smart</span>
+                <span>Smart Routing</span>
+                <span>AI-Powered</span>
               </div>
             </div>
             <div class="floating-card floating-card--2">
               <div class="card-icon">⚡</div>
               <div class="card-content">
-                <span>0.1s Swaps</span>
-                <span>Lightning</span>
+                <span>Instant Swaps</span>
+                <span>Lightning Fast</span>
               </div>
             </div>
             <div class="floating-card floating-card--3">
-              <div class="card-icon">🏰</div>
+              <div class="card-icon">🛡️</div>
               <div class="card-content">
-                <span>Fortress Security</span>
-                <span>Unbreakable</span>
+                <span>Secure Trading</span>
+                <span>Protected</span>
               </div>
             </div>
           </div>
@@ -142,25 +128,47 @@ import { Component, signal, effect } from '@angular/core';
   styleUrl: './hero.scss'
 })
 export class HeroComponent {
-  // Rotating words animation using signals - robo theme actions
-  private readonly words = ['Trade', 'Swap', 'Earn', 'Build', 'Farm', 'Stake', 'Mine'];
-  private readonly _currentWordIndex = signal<number>(0);
-  readonly currentWord = signal<string>(this.words[0]);
+  // Rotating words for the title with their corresponding colors
+  private readonly titleWords = [
+    { word: 'Smarter', color: '#FFD700' },    // Gold
+    { word: 'Faster', color: '#00BFFF' },     // Deep Sky Blue
+    { word: 'Better', color: '#32CD32' },     // Lime Green
+    { word: 'Secure', color: '#FF6347' },     // Tomato Red
+    { word: 'Wiser', color: '#9370DB' },      // Medium Purple
+    { word: 'Efficient', color: '#20B2AA' }   // Light Sea Green
+  ];
+  
+  private readonly _currentTitleWordIndex = signal<number>(0);
+  readonly currentTitleWord = signal<string>(this.titleWords[0].word);
+  readonly currentWordColor = signal<string>(this.titleWords[0].color);
 
   constructor() {
-    // Effect to handle word rotation
+    // Effect to handle word rotation for title
     effect(() => {
       const interval = setInterval(() => {
-        this._currentWordIndex.update(index => {
-          const nextIndex = (index + 1) % this.words.length;
-          this.currentWord.set(this.words[nextIndex]);
+        this._currentTitleWordIndex.update(index => {
+          const nextIndex = (index + 1) % this.titleWords.length;
+          const nextWord = this.titleWords[nextIndex];
+          this.currentTitleWord.set(nextWord.word);
+          this.currentWordColor.set(nextWord.color);
           return nextIndex;
         });
-      }, 2000); // Faster rotation for more dynamic effect
+      }, 2000); // Change every 2 seconds
 
       // Cleanup interval on component destroy
       return () => clearInterval(interval);
     });
+  }
+
+  // Scroll to swap section function
+  scrollToSwap(): void {
+    const swapSection = document.querySelector('.swap');
+    if (swapSection) {
+      swapSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
   }
 }
 

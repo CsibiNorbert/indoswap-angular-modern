@@ -32,7 +32,7 @@
     font-size: clamp(2.5rem, 5vw, 4rem);
     font-weight: 800;
     line-height: 1.1;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: var(--text-primary);
 
     .gradient-text {
@@ -50,6 +50,51 @@
       -webkit-text-fill-color: transparent;
       animation: spectacularGlow 2s ease-in-out infinite alternate;
     }
+
+    .rotating-word {
+      display: inline-block;
+      font-weight: 700;
+      text-shadow: 0 0 1px currentColor;
+      filter: drop-shadow(0 0 0.5px currentColor);
+      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      animation: wordGlowMinimal 4s ease-in-out infinite alternate;
+      position: relative;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: currentColor;
+        opacity: 0.01;
+        border-radius: 8px;
+        z-index: -1;
+        transform: scale(1.01);
+        animation: wordHaloMinimal 4s ease-in-out infinite alternate;
+      }
+    }
+  }
+
+  &__subtitle {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    text-align: center;
+
+    .gradient-text {
+      background: var(--robo-gold-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: spectacularGlow 2s ease-in-out infinite alternate;
+    }
+
+    @media (max-width: 768px) {
+      margin-bottom: 1rem;
+    }
   }
 
   &__description {
@@ -58,29 +103,61 @@
     color: var(--text-secondary);
     margin-bottom: 2rem;
     max-width: 500px;
+
+    strong {
+      color: var(--text-primary);
+      background: var(--robo-gold-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
   }
 
   &__features {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
+    justify-content: flex-start;
+
+    @media (max-width: 768px) {
+      justify-content: center;
+    }
 
     .feature-badge {
-      background: rgba(139, 69, 19, 0.1);
-      border: 1px solid rgba(139, 69, 19, 0.2);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
       padding: 0.5rem 1rem;
       border-radius: 50px;
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--text-primary);
       backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
+      transition: var(--transition);
+      white-space: nowrap;
 
       &:hover {
-        background: rgba(139, 69, 19, 0.2);
+        background: var(--glass-hover);
+        border-color: var(--robo-gold-primary);
         transform: translateY(-2px);
+        box-shadow: var(--shadow-gold);
       }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+      justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      align-items: stretch;
     }
   }
 
@@ -164,6 +241,53 @@
           animation-delay: -2s;
         }
       }
+    }
+  }
+
+  // Urgency Banner
+  .urgency-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, var(--robo-gold-primary), var(--robo-gold-secondary));
+    color: var(--robo-ocean-deep);
+    padding: 1rem 2rem;
+    border-radius: 16px;
+    margin-top: 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: var(--shadow-gold);
+    animation: urgencyPulse 2s ease-in-out infinite;
+    border: 2px solid var(--robo-gold-accent);
+
+    .urgency-icon {
+      font-size: 1.25rem;
+      animation: urgencyBounce 1s ease-in-out infinite;
+    }
+
+    .urgency-text {
+      text-align: center;
+      line-height: 1.4;
+
+      strong {
+        font-weight: 800;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1rem 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 480px) {
+      margin: 1.5rem -1rem 0;
+      border-radius: 12px;
+      padding: 0.875rem 1rem;
+      font-size: 0.85rem;
     }
   }
 
@@ -435,6 +559,30 @@
   100% {
     filter: drop-shadow(0 0 15px var(--robo-gold-secondary));
     text-shadow: 0 0 20px var(--robo-gold-secondary);
+  }
+}
+
+@keyframes wordGlowMinimal {
+  0% {
+    text-shadow: 0 0 1px currentColor;
+    filter: drop-shadow(0 0 0.5px currentColor);
+    transform: scale(1);
+  }
+  100% {
+    text-shadow: 0 0 3px currentColor;
+    filter: drop-shadow(0 0 1.5px currentColor);
+    transform: scale(1.01);
+  }
+}
+
+@keyframes wordHaloMinimal {
+  0% {
+    opacity: 0.01;
+    transform: scale(1.01);
+  }
+  100% {
+    opacity: 0.03;
+    transform: scale(1.03);
   }
 }
 
@@ -877,6 +1025,39 @@
   animation: textGlow 2s ease-in-out infinite alternate;
 }
 
+// Feature Highlight
+.feature-highlight {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 1rem 2rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(15px);
+  transition: var(--transition);
+
+  &:hover {
+    background: var(--glass-hover);
+    border-color: var(--robo-gold-primary);
+    box-shadow: var(--shadow-gold);
+  }
+
+  .feature-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
+
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 0.9rem;
+    }
+  }
+}
+
 // Energy Particles
 .energy-particles {
   position: absolute;
@@ -990,4 +1171,25 @@
 @keyframes platformRotateReverse {
   0% { transform: translate(-50%, -50%) rotate(360deg); }
   100% { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+// Urgency Banner Animations
+@keyframes urgencyPulse {
+  0%, 100% {
+    box-shadow: var(--shadow-gold);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 25px 50px rgba(251, 191, 36, 0.3);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes urgencyBounce {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
