@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SwapService } from '../../services/swap.service';
 import { WalletService } from '../../services/wallet.service';
@@ -20,9 +20,9 @@ import { Token } from '../../models/interfaces';
             </p>
           </div>
           
-          <div class="swap__card">
+          <div class="swap__card" #swapCard>
             <!-- From Token Section -->
-            <div class="token-input">
+            <div class="token-input" data-token-input="from">
               <div class="token-input__header">
                 <span class="token-input__label">From</span>
                 <span class="token-input__balance">
@@ -89,7 +89,7 @@ import { Token } from '../../models/interfaces';
             </div>
             
             <!-- To Token Section -->
-            <div class="token-input">
+            <div class="token-input" data-token-input="to">
               <div class="token-input__header">
                 <span class="token-input__label">To</span>
                 <span class="token-input__balance">
@@ -207,6 +207,7 @@ export class SwapComponent {
   protected readonly swapService = inject(SwapService);
   protected readonly walletService = inject(WalletService);
   private readonly notificationService = inject(NotificationService);
+  private readonly elementRef = inject(ElementRef);
 
   // Component state
   protected readonly showFromTokenList = signal<boolean>(false);
@@ -215,6 +216,38 @@ export class SwapComponent {
   
   // Form data
   protected fromAmount: number = 0;
+
+  // Host listener for click outside
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const clickedElement = event.target as HTMLElement;
+    const swapCard = this.elementRef.nativeElement.querySelector('.swap__card');
+    
+    // Check if click is outside the swap card
+    if (swapCard && !swapCard.contains(clickedElement)) {
+      // Close both dropdowns if they're open
+      if (this.showFromTokenList()) {
+        this.showFromTokenList.set(false);
+      }
+      if (this.showToTokenList()) {
+        this.showToTokenList.set(false);
+      }
+    } else {
+      // Click is inside swap card, check if it's outside the dropdowns but not on selectors
+      const fromTokenInput = this.elementRef.nativeElement.querySelector('[data-token-input="from"]');
+      const toTokenInput = this.elementRef.nativeElement.querySelector('[data-token-input="to"]');
+      
+      // Check if click is outside from token area but inside swap card
+      if (fromTokenInput && !fromTokenInput.contains(clickedElement) && this.showFromTokenList()) {
+        this.showFromTokenList.set(false);
+      }
+      
+      // Check if click is outside to token area but inside swap card  
+      if (toTokenInput && !toTokenInput.contains(clickedElement) && this.showToTokenList()) {
+        this.showToTokenList.set(false);
+      }
+    }
+  }
 
   onFromAmountChange(amount: number): void {
     this.fromAmount = amount || 0;
