@@ -53,7 +53,7 @@ export interface Stat {
 }
 
 // Wallet-related interfaces for the modal functionality
-export type WalletStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type WalletStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'wrong-network';
 
 export interface WalletState {
   readonly status: WalletStatus;

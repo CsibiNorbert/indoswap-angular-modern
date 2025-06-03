@@ -1,1 +1,91 @@
-<p>header works!</p>
+<header class="header">
+  <!-- Logo Section -->
+  <div class="logo">
+    <div class="logo-text">IndoSwap</div>
+    <div class="logo-badge">Beta</div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <button 
+      type="button" 
+      class="nav-link"
+      (click)="navigateToSwap()"
+      aria-label="Navigate to swap page">
+      Swap
+    </button>
+    <button 
+      type="button" 
+      class="nav-link"
+      (click)="navigateToPool()"
+      aria-label="Navigate to liquidity pools">
+      Pool
+    </button>
+    <button 
+      type="button" 
+      class="nav-link"
+      (click)="navigateToBridge()"
+      aria-label="Navigate to bridge">
+      Bridge
+    </button>
+    <button 
+      type="button" 
+      class="nav-link"
+      (click)="navigateToFarms()"
+      aria-label="Navigate to yield farms">
+      Farms
+    </button>
+  </nav>
+
+  <!-- Wallet Info (shown when connected) -->
+  <div class="wallet-info" *ngIf="isConnected()">
+    <!-- Balance Display -->
+    <div class="balance-display">
+      <span class="balance-amount">{{ formattedBalance() }}</span>
+      <button 
+        type="button"
+        class="refresh-balance"
+        (click)="refreshBalance()"
+        [disabled]="isRefreshingBalance()"
+        aria-label="Refresh balance">
+        <span *ngIf="isRefreshingBalance()">⟳</span>
+        <span *ngIf="!isRefreshingBalance()">↻</span>
+      </button>
+    </div>
+
+    <!-- Network Status -->
+    <div [ngClass]="networkClass()">
+      <span class="network-indicator" 
+            [attr.aria-label]="isCorrectNetwork() ? 'Connected to correct network' : 'Wrong network detected'">
+        {{ isCorrectNetwork() ? '🟢' : '🔴' }}
+      </span>
+      <span class="network-name">{{ networkName() }}</span>
+      <button 
+        *ngIf="!isCorrectNetwork()"
+        type="button"
+        class="switch-network"
+        (click)="switchNetwork()"
+        aria-label="Switch to Binance Smart Chain">
+        Switch
+      </button>
+    </div>
+  </div>
+
+  <!-- Connect Wallet Button -->
+  <button 
+    type="button"
+    [class]="connectButtonClass()"
+    [disabled]="isConnecting()"
+    (click)="connectWallet()"
+    [attr.aria-label]="isConnected() ? 'Disconnect wallet' : 'Connect wallet'">
+    
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" *ngIf="isConnecting()" aria-hidden="true"></div>
+    
+    <!-- Button Text -->
+    <span class="button-text">{{ connectButtonText() }}</span>
+    
+    <!-- Disconnect Icon (shown when connected) -->
+    <span class="disconnect-icon" *ngIf="isConnected()" aria-hidden="true">↗</span>
+  </button>
+</header>

@@ -121,29 +121,4 @@ export class WalletModalComponent {
       this.closeModal();
     }
   }
-
-  // Alias for compatibility with existing template
-  isModalOpen = this.isOpen;
-  onCloseModal = this.closeModal;
-  connectingWallet = this.connectingWalletId;
-
-  // For template compatibility
-  trackByWallet(index: number, wallet: WalletOption): string {
-    return this.trackByWalletId(index, wallet);
-  }
-
-  getWalletStatus(wallet: WalletOption): string {
-    return wallet.status;
-  }
-
-  getWalletButtonText(wallet: WalletOption): string {
-    return this.getButtonState(wallet).text;
-  }
-
-  async onWalletSelect(walletId: string): Promise<void> {
-    const wallet = this.walletOptions().find(w => w.id === walletId);
-    if (wallet) {
-      await this.selectWallet(wallet);
-    }
-  }
-}
+} 

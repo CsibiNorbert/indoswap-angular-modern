@@ -1,11 +1,12 @@
 <div 
   class="wallet-modal-overlay"
-  *ngIf="isModalOpen()"
+  *ngIf="isOpen()"
   (click)="onBackdropClick($event)"
+  (keydown)="onKeydown($event)"
   role="dialog"
   aria-modal="true"
   aria-labelledby="modal-title"
-  [attr.aria-hidden]="!isModalOpen()">
+  [attr.aria-hidden]="!isOpen()">
   
   <div class="wallet-modal">
     <!-- Modal Header -->
@@ -14,7 +15,7 @@
       <button 
         type="button"
         class="close-button"
-        (click)="onCloseModal()"
+        (click)="closeModal()"
         aria-label="Close wallet selection modal">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.3 5.71L12 12.01 5.7 5.71 4.29 7.12 10.59 13.42 4.29 19.72 5.7 21.13 12 14.83 18.3 21.13 19.71 19.72 13.41 13.42 19.71 7.12z"/>
@@ -32,18 +33,18 @@
       <button
         type="button"
         class="wallet-option"
-        *ngFor="let wallet of walletOptions; trackBy: trackByWallet"
-        [class]="'wallet-option-' + getWalletStatus(wallet)"
-        [disabled]="isConnecting() || getWalletStatus(wallet) === 'not-installed'"
-        (click)="onWalletSelect(wallet.id)"
+        *ngFor="let wallet of walletOptions(); trackBy: trackByWalletId"
+        [class]="'wallet-option-' + wallet.status"
+        [disabled]="getButtonState(wallet).disabled"
+        (click)="selectWallet(wallet)"
         [attr.aria-label]="'Connect using ' + wallet.name">
         
         <!-- Wallet Icon -->
         <div class="wallet-icon">
           <span class="icon-emoji" aria-hidden="true">{{ wallet.icon }}</span>
           
-          <!-- Popular Badge -->
-          <div class="popular-badge" *ngIf="wallet.isPopular" aria-label="Popular choice">
+          <!-- Popular Badge for MetaMask -->
+          <div class="popular-badge" *ngIf="wallet.id === 'metamask'" aria-label="Most popular">
             <span class="badge-text">Popular</span>
           </div>
         </div>
@@ -59,23 +60,37 @@
           <!-- Loading Spinner -->
           <div 
             class="loading-spinner" 
-            *ngIf="connectingWallet() === wallet.id"
+            *ngIf="getButtonState(wallet).loading"
             aria-hidden="true">
           </div>
           
           <!-- Status Text -->
-          <span class="status-text">{{ getWalletButtonText(wallet) }}</span>
+          <span class="status-text" [class]="getButtonState(wallet).class">
+            {{ getButtonState(wallet).text }}
+          </span>
           
-          <!-- Arrow Icon -->
+          <!-- Arrow Icon for available wallets -->
           <svg 
             class="arrow-icon" 
-            *ngIf="getWalletStatus(wallet) === 'available'"
+            *ngIf="wallet.status === 'available' && !getButtonState(wallet).loading"
             width="20" 
             height="20" 
             viewBox="0 0 24 24" 
             fill="currentColor"
             aria-hidden="true">
             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+          </svg>
+
+          <!-- Install Icon for not-installed wallets -->
+          <svg 
+            class="install-icon" 
+            *ngIf="wallet.status === 'not-installed'"
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="currentColor"
+            aria-hidden="true">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
           </svg>
         </div>
       </button>
@@ -90,13 +105,24 @@
       </div>
     </div>
 
-    <!-- Help Link -->
-    <div class="modal-footer">
-      <button type="button" class="help-link">
+    <!-- MetaMask Installation Help -->
+    <div class="modal-footer" *ngIf="!walletService.isMetaMaskInstalled()">
+      <div class="help-section">
+        <div class="help-icon" aria-hidden="true">ℹ️</div>
+        <div class="help-text">
+          <strong>New to MetaMask?</strong> 
+          MetaMask is a browser extension that allows you to securely store and manage your crypto assets.
+        </div>
+      </div>
+    </div>
+
+    <!-- Regular Footer for when MetaMask is installed -->
+    <div class="modal-footer" *ngIf="walletService.isMetaMaskInstalled()">
+      <button type="button" class="help-link" disabled>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
         </svg>
-        New to wallets? Learn more
+        Additional wallets coming soon
       </button>
     </div>
   </div>
