@@ -10,6 +10,33 @@
   --color-error: #ff6b6b;
   --border-radius: 0.5rem;
   --transition: all 0.3s ease;
+
+  // Robo Coin Theme Variables
+  --robo-dark-primary: #0a0a0a;
+  --robo-dark-secondary: #1a1a1a;
+  --robo-dark-accent: #2a2a2a;
+  --robo-gold-primary: #ffd700;
+  --robo-gold-secondary: #ffed4e;
+  --robo-gold-accent: #fbbf24;
+  --robo-silver: #c0c0c0;
+  --robo-chrome: #e5e7eb;
+
+  // Gradients
+  --robo-gold-gradient: linear-gradient(135deg, #ffd700, #ffed4e, #fbbf24);
+  --robo-metallic-gradient: linear-gradient(135deg, #c0c0c0, #e5e7eb, #f3f4f6);
+  --robo-dark-gradient: linear-gradient(135deg, #0a0a0a, #1a1a1a, #2a2a2a);
+
+  // Glass effects
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-hover: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 215, 0, 0.2);
+
+  // Shadows
+  --shadow-gold: 0 8px 32px rgba(255, 215, 0, 0.3);
+  --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  // Coin effects
+  --coin-glow: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
 }
 
 // Dark theme support
@@ -190,6 +217,32 @@ body {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+// Robo Theme Animations
+@keyframes coinRotate {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes coinGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
+    transform: scale(1.05);
+  }
+}
+
+@keyframes roboFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
   }
 }
 

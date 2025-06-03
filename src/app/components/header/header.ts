@@ -8,45 +8,62 @@ import { NotificationService } from '../../services/notification.service';
   imports: [],
   template: `
     <header class="header">
-      <div class="container">
-        <div class="header__logo">
-          <h1>IndoSwap</h1>
+      <div class="logo">
+        <div class="logo-icon">
+          <img 
+            src="/images/coins/coin.jpg" 
+            alt="Robo Coin" 
+            class="logo-coin"
+          />
         </div>
-        
-        <nav class="header__nav">
-          <ul>
-            <li><a href="#swap">Swap</a></li>
-            <li><a href="#pool">Pool</a></li>
-            <li><a href="#stake">Stake</a></li>
-            <li><a href="#governance">Governance</a></li>
-          </ul>
-        </nav>
-        
-        <div class="header__wallet">
-          @if (walletService.isConnected()) {
-            <div class="wallet-info">
-              <span class="wallet-address">{{ walletService.shortAddress() }}</span>
-              <button 
-                class="btn btn--secondary"
-                (click)="disconnectWallet()"
-              >
-                Disconnect
-              </button>
-            </div>
-          } @else {
-            <button 
-              class="btn btn--primary"
-              [disabled]="walletService.isLoading()"
-              (click)="connectWallet()"
-            >
+        <div class="logo-text-container">
+          <div class="logo-text">IndoSwap</div>
+          <div class="logo-badge">Robo DeFi</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#swap" class="nav-link">
+          <span>🔄 Swap</span>
+        </a>
+        <a href="#pool" class="nav-link">
+          <span>💧 Pool</span>
+        </a>
+        <a href="#stake" class="nav-link">
+          <span>⚡ Stake</span>
+        </a>
+        <a href="#governance" class="nav-link">
+          <span>🏛️ Governance</span>
+        </a>
+      </nav>
+
+      <div class="wallet-section">
+        @if (walletService.isConnected()) {
+          <button 
+            class="connect-wallet connected"
+            (click)="disconnectWallet()"
+          >
+            <span class="wallet-icon">🔗</span>
+            <span>{{ walletService.shortAddress() }}</span>
+          </button>
+        } @else {
+          <button 
+            class="connect-wallet"
+            [class.connecting]="walletService.isLoading()"
+            [disabled]="walletService.isLoading()"
+            (click)="connectWallet()"
+          >
+            <div class="wallet-glow"></div>
+            <span class="wallet-icon">🤖</span>
+            <span>
               @if (walletService.isLoading()) {
                 Connecting...
               } @else {
                 Connect Wallet
               }
-            </button>
-          }
-        </div>
+            </span>
+          </button>
+        }
       </div>
     </header>
   `,
