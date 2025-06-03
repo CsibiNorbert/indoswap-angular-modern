@@ -1,65 +1,153 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { WalletState, WalletStatus } from '../models/interfaces';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WalletService {
-  // Using BehaviorSubjects for compatibility with existing components
-  private isConnectedSubject = new BehaviorSubject<boolean>(false);
-  private addressSubject = new BehaviorSubject<string>('');
-
-  // Modern Angular signals for reactive state management
-  private readonly _isConnected = signal<boolean>(false);
-  private readonly _address = signal<string>('');
-  private readonly _isLoading = signal<boolean>(false);
-
-  // Observable streams for reactive programming
-  isConnected$: Observable<boolean> = this.isConnectedSubject.asObservable();
-  address$: Observable<string> = this.addressSubject.asObservable();
-
-  // Computed values for derived state
-  readonly isConnected = this._isConnected.asReadonly();
-  readonly address = this._address.asReadonly();
-  readonly isLoading = this._isLoading.asReadonly();
-  readonly shortAddress = computed(() => {
-    const addr = this._address();
-    return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+  // Signals for reactive state management
+  private readonly walletState = signal<WalletState>({
+    status: 'disconnected',
+    address: '',
+    chainId: 56, // BSC mainnet
+    balance: '0'
   });
 
-  async connectWallet(): Promise<void> {
-    this._isLoading.set(true);
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const address = '0x1234567890abcdef1234567890abcdef12345678';
-        
-        // Update both signals and subjects for compatibility
-        this._isConnected.set(true);
-        this._address.set(address);
-        this.isConnectedSubject.next(true);
-        this.addressSubject.next(address);
-        
-        this._isLoading.set(false);
-        resolve();
-      }, 1000);
-    });
+  // Modal state
+  private readonly modalOpen = signal<boolean>(false);
+  private readonly _connectingWalletId = signal<string>('');
+
+  // Public computed signals
+  readonly isConnected = computed(() => 
+    this.walletState().status === 'connected'
+  );
+  
+  readonly isConnecting = computed(() => 
+    this.walletState().status === 'connecting'
+  );
+
+  // Add isLoading alias for backward compatibility
+  readonly isLoading = computed(() => 
+    this.walletState().status === 'connecting'
+  );
+  
+  readonly address = computed(() => 
+    this.walletState().address
+  );
+  
+  readonly shortAddress = computed(() => {
+    const addr = this.address();
+    return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+  });
+  
+  readonly chainId = computed(() => 
+    this.walletState().chainId
+  );
+  
+  readonly balance = computed(() => 
+    this.walletState().balance
+  );
+
+  // Modal state signals
+  readonly isModalOpen = computed(() => 
+    this.modalOpen()
+  );
+
+  readonly connectingWalletId = computed(() => 
+    this._connectingWalletId()
+  );
+
+  // Modal methods
+  showModal(): void {
+    this.modalOpen.set(true);
+  }
+
+  closeModal(): void {
+    this.modalOpen.set(false);
+    // Reset connecting state when modal is closed
+    this._connectingWalletId.set('');
+  }
+
+  // Updated connect wallet method that accepts wallet ID
+  async connectWallet(walletId?: string): Promise<void> {
+    // If no walletId provided, show modal instead
+    if (!walletId) {
+      this.showModal();
+      return;
+    }
+
+    // Set connecting state
+    this._connectingWalletId.set(walletId);
+    this.walletState.update(state => ({
+      ...state,
+      status: 'connecting'
+    }));
+
+    try {
+      // Simulate wallet connection process
+      await this.simulateWalletConnection(walletId);
+      
+      // Mock successful connection
+      this.walletState.set({
+        status: 'connected',
+        address: this.generateMockAddress(walletId),
+        chainId: 56,
+        balance: '2.45'
+      });
+
+      // Close modal on successful connection
+      this.closeModal();
+      
+    } catch (error) {
+      this.walletState.update(state => ({
+        ...state,
+        status: 'error'
+      }));
+      this._connectingWalletId.set('');
+      throw error;
+    }
   }
 
   disconnectWallet(): void {
-    // Update both signals and subjects for compatibility
-    this._isConnected.set(false);
-    this._address.set('');
-    this.isConnectedSubject.next(false);
-    this.addressSubject.next('');
+    this.walletState.set({
+      status: 'disconnected',
+      address: '',
+      chainId: 56,
+      balance: '0'
+    });
+    this.closeModal();
   }
 
-  // Getter methods for compatibility with existing code
-  get isConnectedValue(): boolean {
-    return this.isConnectedSubject.value;
+  // For reactive updates from external wallet events
+  updateWalletState(updates: Partial<WalletState>): void {
+    this.walletState.update(state => ({ ...state, ...updates }));
   }
 
-  get addressValue(): string {
-    return this.addressSubject.value;
+  // Private helper methods
+  private async simulateWalletConnection(walletId: string): Promise<void> {
+    // Simulate different connection times for different wallets
+    const connectionTime = walletId === 'metamask' ? 1500 : 2000;
+    
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Simulate occasional connection failures for testing
+        if (Math.random() > 0.9) {
+          reject(new Error(`Failed to connect to ${walletId}`));
+        } else {
+          resolve();
+        }
+      }, connectionTime);
+    });
+  }
+
+  private generateMockAddress(walletId: string): string {
+    // Generate different mock addresses based on wallet type
+    const addresses = {
+      metamask: '0x742e4B537583D5cB93f7FD5B23982F1dA5096e7F',
+      walletconnect: '0x8ba1f109551bD432803012645Hac136c4',
+      coinbase: '0xa1b2c3d4e5f6789012345678901234567890abcd'
+    };
+
+    return addresses[walletId as keyof typeof addresses] || addresses.metamask;
   }
 } 

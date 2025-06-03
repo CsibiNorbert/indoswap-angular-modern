@@ -1,0 +1,103 @@
+<div 
+  class="wallet-modal-overlay"
+  *ngIf="isModalOpen()"
+  (click)="onBackdropClick($event)"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+  [attr.aria-hidden]="!isModalOpen()">
+  
+  <div class="wallet-modal">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2 id="modal-title" class="modal-title">Connect Wallet</h2>
+      <button 
+        type="button"
+        class="close-button"
+        (click)="onCloseModal()"
+        aria-label="Close wallet selection modal">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.3 5.71L12 12.01 5.7 5.71 4.29 7.12 10.59 13.42 4.29 19.72 5.7 21.13 12 14.83 18.3 21.13 19.71 19.72 13.41 13.42 19.71 7.12z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Description -->
+    <p class="modal-description">
+      Choose your preferred wallet to connect to IndoSwap and start trading
+    </p>
+
+    <!-- Wallet Options -->
+    <div class="wallet-options">
+      <button
+        type="button"
+        class="wallet-option"
+        *ngFor="let wallet of walletOptions; trackBy: trackByWallet"
+        [class]="'wallet-option-' + getWalletStatus(wallet)"
+        [disabled]="isConnecting() || getWalletStatus(wallet) === 'not-installed'"
+        (click)="onWalletSelect(wallet.id)"
+        [attr.aria-label]="'Connect using ' + wallet.name">
+        
+        <!-- Wallet Icon -->
+        <div class="wallet-icon">
+          <span class="icon-emoji" aria-hidden="true">{{ wallet.icon }}</span>
+          
+          <!-- Popular Badge -->
+          <div class="popular-badge" *ngIf="wallet.isPopular" aria-label="Popular choice">
+            <span class="badge-text">Popular</span>
+          </div>
+        </div>
+
+        <!-- Wallet Info -->
+        <div class="wallet-info">
+          <div class="wallet-name">{{ wallet.name }}</div>
+          <div class="wallet-description">{{ wallet.description }}</div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="wallet-status">
+          <!-- Loading Spinner -->
+          <div 
+            class="loading-spinner" 
+            *ngIf="connectingWallet() === wallet.id"
+            aria-hidden="true">
+          </div>
+          
+          <!-- Status Text -->
+          <span class="status-text">{{ getWalletButtonText(wallet) }}</span>
+          
+          <!-- Arrow Icon -->
+          <svg 
+            class="arrow-icon" 
+            *ngIf="getWalletStatus(wallet) === 'available'"
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="currentColor"
+            aria-hidden="true">
+            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- Security Notice -->
+    <div class="security-notice">
+      <div class="notice-icon" aria-hidden="true">🔒</div>
+      <div class="notice-text">
+        <strong>Secure Connection:</strong> 
+        We never store your private keys or seed phrases. Your wallet remains under your full control.
+      </div>
+    </div>
+
+    <!-- Help Link -->
+    <div class="modal-footer">
+      <button type="button" class="help-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+        </svg>
+        New to wallets? Learn more
+      </button>
+    </div>
+  </div>
+</div>

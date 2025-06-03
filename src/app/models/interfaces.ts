@@ -50,4 +50,14 @@ export interface FeatureItem {
 export interface Stat {
   readonly value: string;
   readonly label: string;
+}
+
+// Wallet-related interfaces for the modal functionality
+export type WalletStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+export interface WalletState {
+  readonly status: WalletStatus;
+  readonly address: string;
+  readonly chainId: number;
+  readonly balance: string;
 } 
