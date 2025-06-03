@@ -10,11 +10,15 @@
         <!-- Live Price Overview -->
         @if (swapService.hasLivePrices()) {
           <div class="live-price-overview">
-            <div class="price-overview-grid">
-              <app-price-display symbol="BNB" size="small" [showLastUpdate]="true"></app-price-display>
-              <app-price-display symbol="BUSD" size="small" [showLastUpdate]="true"></app-price-display>
-              <app-price-display symbol="USDT" size="small" [showLastUpdate]="true"></app-price-display>
-            </div>
+            <app-token-price-list 
+              [config]="{
+                symbols: ['BNB', 'USDT', 'USDC'],
+                size: 'small',
+                showLastUpdate: true,
+                inline: true,
+                layout: 'horizontal'
+              }"
+            ></app-token-price-list>
           </div>
         }
       </div>

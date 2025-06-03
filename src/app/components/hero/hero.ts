@@ -1,11 +1,11 @@
 import { Component, signal, effect } from '@angular/core';
 import { ButtonComponent } from '../shared/button/button.component';
-import { PriceDisplayComponent } from '../price-display/price-display.component';
+import { TokenPriceListComponent } from '../shared/token-price-list/token-price-list.component';
 
 @Component({
   selector: 'app-hero',
   standalone: true,
-  imports: [ButtonComponent, PriceDisplayComponent],
+  imports: [ButtonComponent, TokenPriceListComponent],
   template: `
     <section class="hero">
       <div class="container">
@@ -24,9 +24,15 @@ import { PriceDisplayComponent } from '../price-display/price-display.component'
           <div class="live-price-ticker">
             <h3 class="ticker-title">Live Prices</h3>
             <div class="price-ticker-container">
-              <app-price-display symbol="BNB" [showName]="true" size="small" [inline]="true"></app-price-display>
-              <app-price-display symbol="BUSD" [showName]="true" size="small" [inline]="true"></app-price-display>
-              <app-price-display symbol="USDT" [showName]="true" size="small" [inline]="true"></app-price-display>
+              <app-token-price-list 
+                [config]="{
+                  symbols: ['BNB', 'USDT', 'USDC'],
+                  showName: true,
+                  size: 'small',
+                  inline: true,
+                  layout: 'horizontal'
+                }"
+              ></app-token-price-list>
             </div>
           </div>
           

@@ -80,11 +80,10 @@ export class PriceDisplayComponent {
   protected readonly tokenName = computed(() => {
     const names: { [key: string]: string } = {
       'BNB': 'Binance Coin',
-      'BUSD': 'Binance USD',
       'USDT': 'Tether USD',
       'USDC': 'USD Coin',
       'ETH': 'Ethereum',
-      'BTCB': 'Bitcoin'
+      'BTCB': 'Bitcoin BEP20'
     };
     return names[this.symbol] || this.symbol;
   });

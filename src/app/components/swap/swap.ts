@@ -5,12 +5,12 @@ import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
 import { Token } from '../../models/interfaces';
 import { ButtonComponent } from '../shared/button/button.component';
-import { PriceDisplayComponent } from '../price-display/price-display.component';
+import { TokenPriceListComponent } from '../shared/token-price-list/token-price-list.component';
 
 @Component({
   selector: 'app-swap',
   standalone: true,
-  imports: [FormsModule, ButtonComponent, PriceDisplayComponent],
+  imports: [FormsModule, ButtonComponent, TokenPriceListComponent],
   templateUrl: './swap.component.html',
   styleUrl: './swap.scss'
 })
@@ -142,10 +142,12 @@ export class SwapComponent {
   }
 
   protected getTokenIcon(symbol: string): string {
-    const icons: { [key: string]: string } = {
+    const icons: Record<string, string> = {
       'BNB': '🟡',
-      'BUSD': '💰',
-      'USDT': '💵'
+      'USDT': '💚', 
+      'USDC': '🔵',
+      'ETH': '🔷',
+      'BTCB': '🟠'
     };
     return icons[symbol] || '🪙';
   }

@@ -45,7 +45,6 @@ export class LivePriceService {
   // Token mapping for Binance symbol pairs
   private readonly TOKEN_SYMBOLS = new Map([
     ['BNB', 'BNBUSDT'],
-    ['BUSD', 'BUSDUSDT'], 
     ['USDC', 'USDCUSDT'],
     ['ETH', 'ETHUSDT'],
     ['BTCB', 'BTCUSDT'],
@@ -59,14 +58,6 @@ export class LivePriceService {
       price: 285.42, 
       change24h: 2.45, 
       volume24h: 1234567890, 
-      lastUpdated: Date.now(),
-      source: 'mock'
-    }],
-    ['BUSD', { 
-      symbol: 'BUSD', 
-      price: 1.0000, 
-      change24h: 0.02, 
-      volume24h: 567890123, 
       lastUpdated: Date.now(),
       source: 'mock'
     }],
@@ -303,7 +294,7 @@ export class LivePriceService {
   }
 
   private calculateSlippage(amount: number, fromSymbol: string, toSymbol: string): number {
-    const stablecoins = ['BUSD', 'USDT', 'USDC'];
+    const stablecoins = ['USDT', 'USDC'];
     const isStablePair = stablecoins.includes(fromSymbol) && stablecoins.includes(toSymbol);
     
     if (isStablePair) {

@@ -11,9 +11,11 @@ export class SwapService {
 
   // Default tokens with updated data
   private defaultTokens: Token[] = [
-    { symbol: 'BNB', name: 'Binance Coin', icon: 'bnb', balance: 2.45, address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', decimals: 18 },
-    { symbol: 'BUSD', name: 'Binance USD', icon: 'busd', balance: 1250.00, address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', decimals: 18 },
-    { symbol: 'USDT', name: 'Tether USD', icon: 'usdt', balance: 500.00, address: '0x55d398326f99059fF775485246999027B3197955', decimals: 18 }
+    { symbol: 'BNB', name: 'BNB', icon: 'bnb', balance: 0.5432, address: '0xbb4CdB9CBd36B01bD1cBaeBF2De08d9173bc095c', decimals: 18 },
+    { symbol: 'USDT', name: 'Tether USD', icon: 'usdt', balance: 2500.00, address: '0x55d398326f99059fF775485246999027B3197955', decimals: 18 },
+    { symbol: 'USDC', name: 'USD Coin', icon: 'usdc', balance: 850.50, address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', decimals: 18 },
+    { symbol: 'ETH', name: 'Ethereum', icon: 'eth', balance: 1.2345, address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', decimals: 18 },
+    { symbol: 'BTCB', name: 'Bitcoin BEP20', icon: 'btc', balance: 0.0876, address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', decimals: 18 }
   ];
 
   // BehaviorSubject for compatibility
