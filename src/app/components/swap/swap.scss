@@ -120,11 +120,6 @@
 
   &__actions {
     margin-top: 2rem;
-
-    .btn {
-      width: 100%;
-      justify-content: center;
-    }
   }
 }
 
@@ -355,60 +350,7 @@
   }
 }
 
-// Button styles
-.btn {
-  background: linear-gradient(135deg, #8B4513, #B8860B);
-  border: none;
-  border-radius: 16px;
-  padding: 1rem 2rem;
-  font-weight: 700;
-  font-size: 1rem;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  box-shadow: 0 4px 16px rgba(139, 69, 19, 0.3);
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #A0522D, #DAA520);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.2);
-  }
-
-  &--large {
-    padding: 1.25rem 2rem;
-    font-size: 1.125rem;
-    border-radius: 20px;
-  }
-
-  &--secondary {
-    background: rgba(139, 69, 19, 0.1);
-    border: 1px solid rgba(139, 69, 19, 0.2);
-    color: var(--text-primary);
-    box-shadow: none;
-
-    &:hover:not(:disabled) {
-      background: rgba(139, 69, 19, 0.2);
-      border-color: rgba(139, 69, 19, 0.3);
-    }
-  }
-}
-
-// Animations
+// Loading and transition animations
 @keyframes fadeInUp {
   from {
     opacity: 0;

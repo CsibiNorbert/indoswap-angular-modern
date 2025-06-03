@@ -4,11 +4,12 @@ import { SwapService } from '../../services/swap.service';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
 import { Token } from '../../models/interfaces';
+import { ButtonComponent } from '../shared/button/button.component';
 
 @Component({
   selector: 'app-swap',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ButtonComponent],
   template: `
     <section class="swap">
       <div class="container">
@@ -168,22 +169,30 @@ import { Token } from '../../models/interfaces';
             <!-- Action Buttons -->
             <div class="swap__actions">
               @if (!walletService.isConnected()) {
-                <button 
-                  class="btn btn--primary btn--large"
-                  (click)="connectWallet()"
+                <app-button 
+                  variant="primary" 
+                  size="large"
+                  [fullWidth]="true"
+                  (clicked)="connectWallet()"
                   [disabled]="walletService.isLoading()"
+                  [loading]="walletService.isLoading()"
+                  ariaLabel="Connect your wallet to start trading"
                 >
                   @if (walletService.isLoading()) {
                     Connecting...
                   } @else {
                     Connect Wallet
                   }
-                </button>
+                </app-button>
               } @else {
-                <button 
-                  class="btn btn--primary btn--large"
-                  (click)="executeSwap()"
+                <app-button 
+                  variant="primary" 
+                  size="large"
+                  [fullWidth]="true"
+                  (clicked)="executeSwap()"
                   [disabled]="!swapService.canSwap() || swapService.isSwapping()"
+                  [loading]="swapService.isSwapping()"
+                  ariaLabel="Execute token swap"
                 >
                   @if (swapService.isSwapping()) {
                     Swapping...
@@ -192,7 +201,7 @@ import { Token } from '../../models/interfaces';
                   } @else {
                     Swap Tokens
                   }
-                </button>
+                </app-button>
               }
             </div>
           </div>

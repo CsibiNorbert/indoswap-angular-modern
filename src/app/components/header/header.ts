@@ -1,11 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
+import { ButtonComponent } from '../shared/button/button.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [],
+  imports: [ButtonComponent],
   template: `
     <header class="header">
       <div class="logo">
@@ -31,30 +32,31 @@ import { NotificationService } from '../../services/notification.service';
 
       <div class="wallet-section">
         @if (walletService.isConnected()) {
-          <button 
-            class="connect-wallet connected"
-            (click)="disconnectWallet()"
+          <app-button 
+            variant="secondary"
+            size="medium"
+            icon="🔗"
+            (clicked)="disconnectWallet()"
+            ariaLabel="Disconnect wallet"
           >
-            <span class="wallet-icon">🔗</span>
-            <span>{{ walletService.shortAddress() }}</span>
-          </button>
+            {{ walletService.shortAddress() }}
+          </app-button>
         } @else {
-          <button 
-            class="connect-wallet"
-            [class.connecting]="walletService.isLoading()"
+          <app-button 
+            variant="primary"
+            size="medium"
+            icon="🤖"
             [disabled]="walletService.isLoading()"
-            (click)="connectWallet()"
+            [loading]="walletService.isLoading()"
+            (clicked)="connectWallet()"
+            ariaLabel="Connect your wallet"
           >
-            <div class="wallet-glow"></div>
-            <span class="wallet-icon">🤖</span>
-            <span>
-              @if (walletService.isLoading()) {
-                Connecting...
-              } @else {
-                Connect Wallet
-              }
-            </span>
-          </button>
+            @if (walletService.isLoading()) {
+              Connecting...
+            } @else {
+              Connect Wallet
+            }
+          </app-button>
         }
       </div>
     </header>

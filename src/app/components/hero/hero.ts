@@ -1,9 +1,10 @@
 import { Component, signal, effect } from '@angular/core';
+import { ButtonComponent } from '../shared/button/button.component';
 
 @Component({
   selector: 'app-hero',
   standalone: true,
-  imports: [],
+  imports: [ButtonComponent],
   template: `
     <section class="hero">
       <div class="container">
@@ -23,6 +24,19 @@ import { Component, signal, effect } from '@angular/core';
             <div class="feature-badge">⚡ Lightning Fast Swaps</div>
             <div class="feature-badge">💰 Best Prices Guaranteed</div>
             <div class="feature-badge">🛡️ Maximum Security</div>
+          </div>
+
+          <!-- Call to Action -->
+          <div class="hero__cta">
+            <app-button 
+              variant="primary" 
+              size="large"
+              icon="🚀"
+              (clicked)="scrollToSwap()"
+              ariaLabel="Start trading coins now"
+            >
+              Trade Coins Now
+            </app-button>
           </div>
 
           <!-- Main Coin Showcase Section -->
@@ -60,12 +74,7 @@ import { Component, signal, effect } from '@angular/core';
                   <div class="coin-glow-ring-secondary coin-glow-ring-secondary--2"></div>
                 </div>
                 
-                <!-- Platform with Rings - Opposite Direction -->
-                <div class="coin-platform-secondary">
-                  <div class="platform-ring-secondary platform-ring-secondary--1"></div>
-                  <div class="platform-ring-secondary platform-ring-secondary--2"></div>
-                  <div class="platform-ring-secondary platform-ring-secondary--3"></div>
-                </div>
+                <!-- Simplified - No rotating platform rings for cleaner look -->
               </div>
             </div>
           </div>
