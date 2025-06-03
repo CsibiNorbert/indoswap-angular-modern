@@ -39,261 +39,65 @@ import { NotificationService } from '../../services/notification.service';
           (click)="onNavClick('nft')">
           NFT
         </button>
+      </nav>
 
-        <!-- Wallet Section -->
-        <div class="wallet-section">
-          <!-- Connected State -->
-          <div class="wallet-connected" *ngIf="isConnected()">
-            <!-- Balance Display -->
-            <div class="balance-display">
+      <div class="wallet-section">
+        @if (isConnected()) {
+          <!-- Connected state: Show portfolio value, network, and disconnect -->
+          <div class="wallet-connected">
+            <!-- Portfolio value with refresh button -->
+            <div class="balance-display" [class.refreshing]="isRefreshingBalance()">
               <span class="balance-amount">{{ getBalanceDisplay() }}</span>
               <button 
                 type="button"
                 class="refresh-btn"
                 (click)="onRefreshBalance()"
-                title="Refresh balance">
-                🔄
+                [disabled]="isRefreshingBalance()"
+                title="Refresh portfolio"
+                aria-label="Refresh portfolio">
+                {{ isRefreshingBalance() ? '⏳' : '🔄' }}
               </button>
             </div>
-
-            <!-- Network Status -->
+            
+            <!-- Network status indicator -->
             <div class="network-status" [class.correct-network]="isCorrectNetwork()">
-              <span class="network-dot">{{ isCorrectNetwork() ? '🟢' : '🔴' }}</span>
+              <span class="network-indicator">{{ isCorrectNetwork() ? '🟢' : '🔴' }}</span>
               <span class="network-name">{{ getNetworkName() }}</span>
             </div>
-
-            <!-- Wallet Address & Disconnect -->
+            
+            <!-- Wallet address and disconnect button -->
             <div class="wallet-info">
               <span class="wallet-address">{{ shortAddress() }}</span>
               <button 
                 type="button"
                 class="disconnect-btn"
                 (click)="onDisconnect()"
-                title="Disconnect wallet">
+                title="Disconnect wallet"
+                aria-label="Disconnect wallet">
                 ❌
               </button>
             </div>
           </div>
-
-          <!-- Disconnected State -->
+        } @else {
+          <!-- Disconnected state: Show connect button -->
           <button 
             type="button"
             class="connect-btn"
-            *ngIf="!isConnected()"
+            (click)="onConnect()"
             [disabled]="isConnecting()"
-            (click)="onConnect()">
-            <span *ngIf="isConnecting()">⏳ Connecting...</span>
-            <span *ngIf="!isConnecting()">Connect Wallet</span>
+            [class.loading]="isConnecting()">
+            @if (isConnecting()) {
+              <span class="loading-spinner"></span>
+              <span>Connecting...</span>
+            } @else {
+              <span>Connect Wallet</span>
+            }
           </button>
-        </div>
-      </nav>
+        }
+      </div>
     </header>
   `,
-  styles: [`
-    .header {
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      backdrop-filter: blur(20px);
-      background: rgba(255, 255, 255, 0.1);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .logo-text {
-      font-size: 1.8rem;
-      font-weight: 800;
-      background: linear-gradient(45deg, #FFD700, #FFA500);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .logo-badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.2rem 0.4rem;
-      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-      border-radius: 6px;
-      color: white;
-      text-transform: uppercase;
-    }
-
-    .nav {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .nav-link {
-      background: none;
-      border: none;
-      color: white;
-      padding: 0.7rem 1.2rem;
-      border-radius: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .nav-link:hover {
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .wallet-section {
-      margin-left: 1rem;
-    }
-
-    .wallet-connected {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.5rem 1rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-    }
-
-    .balance-display {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-family: 'Courier New', monospace;
-    }
-
-    .balance-amount {
-      font-weight: 600;
-      color: #FFD700;
-      font-size: 0.9rem;
-    }
-
-    .refresh-btn {
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.7);
-      cursor: pointer;
-      padding: 0.2rem;
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      font-size: 0.8rem;
-    }
-
-    .refresh-btn:hover {
-      color: #FFD700;
-      transform: rotate(180deg);
-    }
-
-    .network-status {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.8rem;
-      padding: 0.3rem 0.6rem;
-      border-radius: 8px;
-      background: rgba(239, 68, 68, 0.2);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-
-    .network-status.correct-network {
-      background: rgba(16, 185, 129, 0.2);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    .network-dot {
-      font-size: 0.6rem;
-    }
-
-    .network-name {
-      color: white;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .wallet-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .wallet-address {
-      color: white;
-      font-family: 'Courier New', monospace;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .disconnect-btn {
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.7);
-      cursor: pointer;
-      padding: 0.3rem;
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      font-size: 0.8rem;
-    }
-
-    .disconnect-btn:hover {
-      color: #ff6b6b;
-      background: rgba(255, 107, 107, 0.1);
-      transform: scale(1.1);
-    }
-
-    .connect-btn {
-      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-      padding: 0.8rem 1.5rem;
-      border: none;
-      border-radius: 16px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
-      min-width: 140px;
-    }
-
-    .connect-btn:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(238, 90, 36, 0.4);
-    }
-
-    .connect-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    @media (max-width: 968px) {
-      .header {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-      }
-
-      .nav {
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .wallet-connected {
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: center;
-      }
-    }
-  `]
+  styleUrl: './header.scss'
 })
 export class HeaderComponent {
   private readonly walletService = inject(WalletService);
@@ -303,8 +107,9 @@ export class HeaderComponent {
   readonly isConnected = this.walletService.isConnected;
   readonly isConnecting = this.walletService.isConnecting;
   readonly shortAddress = this.walletService.shortAddress;
-  readonly balance = this.walletService.balance;
+  readonly portfolioDisplay = this.walletService.portfolioDisplay;
   readonly isCorrectNetwork = this.walletService.isCorrectNetwork;
+  readonly isRefreshingBalance = this.walletService.isRefreshingBalance;
 
   onConnect(): void {
     this.walletService.showModal();
@@ -317,10 +122,10 @@ export class HeaderComponent {
 
   async onRefreshBalance(): Promise<void> {
     try {
-      await this.walletService.refreshBalance();
-      this.notificationService.showSuccess('💰 Balance updated!');
+      await this.walletService.refreshPortfolio();
+      this.notificationService.showSuccess('💰 Portfolio updated!');
     } catch (error) {
-      this.notificationService.showError('Failed to refresh balance');
+      this.notificationService.showError('Failed to refresh portfolio');
     }
   }
 
@@ -330,9 +135,9 @@ export class HeaderComponent {
   }
 
   getBalanceDisplay(): string {
-    const balanceValue = parseFloat(this.balance());
-    if (balanceValue === 0) return '0.0000 BNB';
-    return `${balanceValue.toFixed(4)} BNB`;
+    const portfolioValue = this.portfolioDisplay();
+    if (portfolioValue === '$0.00') return '$0.00';
+    return portfolioValue;
   }
 
   getNetworkName(): string {

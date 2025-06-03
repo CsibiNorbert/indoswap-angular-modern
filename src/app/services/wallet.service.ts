@@ -14,6 +14,7 @@ import {
   MetaMaskEvent
 } from '../models/web3.interface';
 import { NotificationService } from './notification.service';
+import { PriceService } from './price.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +22,7 @@ import { NotificationService } from './notification.service';
 export class WalletService {
   private readonly notificationService = inject(NotificationService);
   private readonly ngZone = inject(NgZone);
+  private readonly priceService = inject(PriceService);
 
   // Signals for reactive state management
   private readonly walletState = signal<WalletState>({
@@ -79,6 +81,21 @@ export class WalletService {
     return balance ? `${parseFloat(balance).toFixed(4)} BNB` : '0.0000 BNB';
   });
 
+  // NEW: Portfolio calculation computed signals
+  readonly bnbBalance = computed(() => parseFloat(this.balance() || '0'));
+  
+  readonly portfolioValueUSD = computed(() => {
+    const bnbAmount = this.bnbBalance();
+    if (bnbAmount === 0) return 0;
+    
+    return this.priceService.calculateUSDValue('bnb', bnbAmount);
+  });
+
+  readonly portfolioDisplay = computed(() => {
+    const usdValue = this.portfolioValueUSD();
+    return this.priceService.formatUSDValue(usdValue);
+  });
+
   readonly networkName = computed(() => {
     const chainId = this.chainId();
     return SUPPORTED_NETWORKS[chainId]?.chainName || 'Unknown Network';
@@ -105,6 +122,9 @@ export class WalletService {
     console.log('🔧 WalletService: Initializing...');
     this.initializeProvider();
     this.checkExistingConnection();
+    
+    // Start price updates for portfolio calculation
+    this.priceService.startPriceUpdates();
   }
 
   // Initialize MetaMask provider with enhanced debugging
@@ -403,6 +423,11 @@ export class WalletService {
         balance: balanceEth
       }));
 
+      // Log portfolio value for debugging
+      const usdValue = this.priceService.calculateUSDValue('bnb', parseFloat(balanceEth));
+      const formattedValue = this.priceService.formatUSDValue(usdValue);
+      console.log('💰 WalletService: Portfolio value USD:', formattedValue);
+
       console.log('✅ WalletService: Balance updated successfully');
 
     } catch (error) {
@@ -441,10 +466,22 @@ export class WalletService {
     }
   }
 
-  // Public method for refreshing balance (used by header component)
+  // Public method for refreshing portfolio (used by header component)
+  async refreshPortfolio(): Promise<void> {
+    console.log('🔄 WalletService: Manual portfolio refresh requested...');
+    
+    // Refresh prices first
+    await this.priceService.fetchTokenPrices();
+    
+    // Then update balance
+    if (this.isConnected()) {
+      await this.updateBalance();
+    }
+  }
+
+  // Keep for backward compatibility
   async refreshBalance(): Promise<void> {
-    console.log('🔄 WalletService: Manual balance refresh requested...');
-    await this.updateBalance();
+    await this.refreshPortfolio();
   }
 
   // Get network name for display
