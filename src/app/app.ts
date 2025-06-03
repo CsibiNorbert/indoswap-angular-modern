@@ -6,7 +6,6 @@ import { SwapComponent } from './components/swap/swap';
 import { FooterComponent } from './components/footer/footer';
 import { NotificationComponent } from './components/notification/notification';
 import { WalletModalComponent } from './components/wallet-modal/wallet-modal';
-import { Features } from './components/features/features';
 
 @Component({
   selector: 'app-root',
@@ -18,8 +17,7 @@ import { Features } from './components/features/features';
     SwapComponent,
     FooterComponent, 
     NotificationComponent,
-    WalletModalComponent,
-    Features
+    WalletModalComponent
   ],
   template: `
     <div class="background-animation">
@@ -36,7 +34,6 @@ import { Features } from './components/features/features';
         <app-hero />
         <app-stats />
         <app-swap />
-        <app-features />
       </main>
       
       <app-footer />
