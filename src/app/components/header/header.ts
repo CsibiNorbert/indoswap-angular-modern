@@ -11,7 +11,7 @@ import { NotificationService } from '../../services/notification.service';
       <div class="logo">
         <div class="logo-icon">
           <img 
-            src="/images/coins/coin.jpg" 
+            src="/images/coins/coin.png" 
             alt="Robo Coin" 
             class="logo-coin"
           />
