@@ -395,6 +395,10 @@ export class WalletService {
 
   // Balance management with enhanced debugging
   async updateBalance(): Promise<void> {
+    console.log('💰 WalletService: Starting balance update...');
+    console.log('💰 WalletService: Ethereum available:', !!this.ethereum);
+    console.log('💰 WalletService: Address available:', this.address());
+    
     if (!this.ethereum || !this.isConnected() || !this.isCorrectNetwork()) {
       console.log('ℹ️ WalletService: Cannot update balance - conditions not met');
       return;
@@ -406,29 +410,26 @@ export class WalletService {
     try {
       const address = this.address();
       console.log('📍 WalletService: Getting balance for:', address);
+      console.log('💰 WalletService: Requesting balance from blockchain...');
       
       const balanceWei = await this.ethereum.request({
         method: MetaMaskMethod.GET_BALANCE,
         params: [address, 'latest']
       });
 
-      console.log('💰 WalletService: Balance in Wei:', balanceWei);
+      console.log('💰 WalletService: Raw balance (hex):', balanceWei);
 
       // Convert from Wei to BNB
-      const balanceEth = this.weiToEth(balanceWei);
-      console.log('💰 WalletService: Balance in BNB:', balanceEth);
+      const balanceEth = this.weiToBNB(balanceWei);
+      console.log('💰 WalletService: Converted balance (BNB):', balanceEth);
       
       this.walletState.update(state => ({
         ...state,
         balance: balanceEth
       }));
 
-      // Log portfolio value for debugging
-      const usdValue = this.priceService.calculateUSDValue('bnb', parseFloat(balanceEth));
-      const formattedValue = this.priceService.formatUSDValue(usdValue);
-      console.log('💰 WalletService: Portfolio value USD:', formattedValue);
-
       console.log('✅ WalletService: Balance updated successfully');
+      console.log('💰 WalletService: Current balance signal value:', this.balance());
 
     } catch (error) {
       console.error('🚨 WalletService: Error updating balance:', error);
@@ -479,9 +480,18 @@ export class WalletService {
     }
   }
 
-  // Keep for backward compatibility
+  // Enhanced refresh balance method (keep for backward compatibility)
   async refreshBalance(): Promise<void> {
-    await this.refreshPortfolio();
+    console.log('🔄 WalletService: Manual balance refresh requested');
+    console.log('🔄 WalletService: Connection status:', this.isConnected());
+    console.log('🔄 WalletService: Current address:', this.address());
+    console.log('🔄 WalletService: Correct network:', this.isCorrectNetwork());
+    
+    if (this.isConnected() && this.isCorrectNetwork()) {
+      await this.updateBalance();
+    } else {
+      console.warn('🚨 WalletService: Cannot refresh - wallet not connected or wrong network');
+    }
   }
 
   // Get network name for display
@@ -578,14 +588,27 @@ export class WalletService {
     }
   }
 
-  // Utility methods
-  private weiToEth(weiValue: string): string {
+  // Enhanced wei to BNB conversion with debugging
+  private weiToBNB(wei: string): string {
+    console.log('🔄 WalletService: Converting wei to BNB...');
+    console.log('🔄 WalletService: Input wei:', wei);
+    
     try {
-      const wei = BigInt(weiValue);
-      const eth = Number(wei) / Math.pow(10, 18);
-      return eth.toFixed(6);
+      // Remove 0x prefix if present
+      const cleanWei = wei.startsWith('0x') ? wei.slice(2) : wei;
+      console.log('🔄 WalletService: Clean wei (no 0x):', cleanWei);
+      
+      // Convert hex to decimal using BigInt to handle large numbers
+      const weiDecimal = BigInt('0x' + cleanWei);
+      console.log('🔄 WalletService: Wei as decimal:', weiDecimal.toString());
+      
+      // Convert to BNB (1 BNB = 10^18 wei)
+      const bnbValue = Number(weiDecimal) / Math.pow(10, 18);
+      console.log('🔄 WalletService: Final BNB value:', bnbValue);
+      
+      return bnbValue.toFixed(6);
     } catch (error) {
-      console.error('🚨 WalletService: Error converting Wei to ETH:', error);
+      console.error('🚨 WalletService: Error converting wei to BNB:', error);
       return '0';
     }
   }
