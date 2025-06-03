@@ -42,6 +42,14 @@
       -webkit-text-fill-color: transparent;
       animation: gradientShift 3s ease-in-out infinite;
     }
+
+    .spectacular-text {
+      background: var(--robo-gold-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: spectacularGlow 2s ease-in-out infinite alternate;
+    }
   }
 
   &__description {
@@ -87,6 +95,22 @@
 
     .stat {
       text-align: center;
+      position: relative;
+
+      &--enhanced {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 1rem;
+        transition: var(--transition);
+
+        &:hover {
+          transform: translateY(-5px);
+          background: var(--glass-hover);
+          border-color: var(--robo-gold-primary);
+          box-shadow: var(--shadow-gold);
+        }
+      }
 
       &__value {
         display: block;
@@ -94,6 +118,10 @@
         font-weight: 800;
         color: #B8860B;
         margin-bottom: 0.25rem;
+        background: var(--robo-gold-gradient);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
 
       &__label {
@@ -101,6 +129,40 @@
         color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+      }
+
+      &__particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+        border-radius: 16px;
+        
+        &::before,
+        &::after {
+          content: '';
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          background: var(--robo-gold-primary);
+          border-radius: 50%;
+          animation: particleFloat 3s ease-in-out infinite;
+        }
+        
+        &::before {
+          top: 20%;
+          left: 20%;
+          animation-delay: -1s;
+        }
+        
+        &::after {
+          bottom: 20%;
+          right: 20%;
+          animation-delay: -2s;
+        }
       }
     }
   }
@@ -159,6 +221,21 @@
         transform: translate(-50%, -50%);
         animation: pulse 4s ease-in-out infinite;
       }
+    }
+
+    .ambient-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 800px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, 
+        rgba(255, 215, 0, 0.1) 0%, 
+        rgba(255, 215, 0, 0.05) 30%, 
+        transparent 70%);
+      border-radius: 50%;
+      animation: ambientPulse 8s ease-in-out infinite;
     }
   }
 }
@@ -257,4 +334,363 @@
 @keyframes pulse {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+// Spectacular Coin Showcase Animations
+@keyframes spectacularGlow {
+  0% { 
+    filter: drop-shadow(0 0 10px var(--robo-gold-primary));
+  }
+  100% { 
+    filter: drop-shadow(0 0 20px var(--robo-gold-primary)) drop-shadow(0 0 30px var(--robo-gold-secondary));
+  }
+}
+
+@keyframes coinElevate {
+  0%, 100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 5px 15px rgba(255, 215, 0, 0.3));
+  }
+  50% {
+    transform: translateY(-15px);
+    filter: drop-shadow(0 20px 30px rgba(255, 215, 0, 0.6));
+  }
+}
+
+@keyframes coinElevateHover {
+  0%, 100% {
+    transform: scale(1.1) translateY(-5px);
+    filter: drop-shadow(0 10px 25px rgba(255, 215, 0, 0.7));
+  }
+  50% {
+    transform: scale(1.15) translateY(-20px);
+    filter: drop-shadow(0 25px 40px rgba(255, 215, 0, 0.9));
+  }
+}
+
+@keyframes glowRingPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes platformRotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes textGlow {
+  0% {
+    filter: drop-shadow(0 0 5px var(--robo-gold-primary));
+    text-shadow: 0 0 10px var(--robo-gold-primary);
+  }
+  100% {
+    filter: drop-shadow(0 0 15px var(--robo-gold-secondary));
+    text-shadow: 0 0 20px var(--robo-gold-secondary);
+  }
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    opacity: 0.7;
+    transform: translateY(0px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes particleFloat1 {
+  0%, 100% {
+    opacity: 0.7;
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    opacity: 1;
+    transform: translateY(-15px) translateX(5px);
+  }
+  66% {
+    opacity: 0.8;
+    transform: translateY(-5px) translateX(-3px);
+  }
+}
+
+@keyframes particleFloat2 {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-20px) translateX(8px) scale(1.2);
+  }
+}
+
+@keyframes particleFloat3 {
+  0%, 100% {
+    opacity: 0.8;
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-12px) rotate(180deg);
+  }
+}
+
+@keyframes dataStream1 {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(200px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(500px);
+  }
+}
+
+@keyframes dataStream2 {
+  0% {
+    opacity: 0;
+    transform: translateY(-150px) scale(1);
+  }
+  30% {
+    opacity: 0.3;
+    transform: translateY(100px) scale(1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(400px) scale(0.8);
+  }
+}
+
+@keyframes dataStream3 {
+  0% {
+    opacity: 0;
+    transform: translateY(-80px) rotate(0deg);
+  }
+  40% {
+    opacity: 0.4;
+    transform: translateY(150px) rotate(45deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(350px) rotate(90deg);
+  }
+}
+
+@keyframes ambientPulse {
+  0%, 100% {
+    opacity: 0.1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+// Main Coin Showcase Styles
+.coin-showcase {
+  margin: 3rem 0;
+  text-align: center;
+}
+
+.main-coin-container {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-coin {
+  position: relative;
+  z-index: 10;
+  
+  .giant-coin {
+    width: 300px;
+    height: 300px;
+    object-fit: contain;
+    filter: var(--coin-glow);
+    animation: coinElevate 4s ease-in-out infinite;
+    transition: all 0.3s ease;
+  }
+}
+
+.coin-glow-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--robo-gold-primary);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: glowRingPulse 3s ease-in-out infinite;
+  
+  &:first-of-type {
+    width: 320px;
+    height: 320px;
+  }
+  
+  &--2 {
+    width: 360px;
+    height: 360px;
+    animation-delay: -1.5s;
+    opacity: 0.2;
+  }
+}
+
+.coin-platform {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.platform-ring {
+  position: absolute;
+  border: 1px solid var(--robo-gold-primary);
+  border-radius: 50%;
+  opacity: 0.1;
+  animation: platformRotate 20s linear infinite;
+  
+  &--1 {
+    width: 350px;
+    height: 350px;
+    top: -175px;
+    left: -175px;
+  }
+  
+  &--2 {
+    width: 380px;
+    height: 380px;
+    top: -190px;
+    left: -190px;
+    animation-direction: reverse;
+    animation-duration: 25s;
+  }
+  
+  &--3 {
+    width: 420px;
+    height: 420px;
+    top: -210px;
+    left: -210px;
+    animation-duration: 30s;
+  }
+}
+
+// Rotating Text
+.rotating-text-container {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.rotating-text {
+  font-size: 2rem;
+  font-weight: 800;
+  background: var(--robo-gold-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+// Energy Particles
+.energy-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--robo-gold-primary);
+  border-radius: 50%;
+  opacity: 0.7;
+  
+  &--1 {
+    top: 20%;
+    left: 30%;
+    animation: particleFloat1 4s ease-in-out infinite;
+  }
+  
+  &--2 {
+    top: 60%;
+    right: 25%;
+    animation: particleFloat2 5s ease-in-out infinite;
+  }
+  
+  &--3 {
+    bottom: 30%;
+    left: 60%;
+    animation: particleFloat3 6s ease-in-out infinite;
+  }
+  
+  &--4 {
+    top: 40%;
+    left: 80%;
+    animation: particleFloat1 3.5s ease-in-out infinite;
+  }
+  
+  &--5 {
+    bottom: 60%;
+    right: 70%;
+    animation: particleFloat2 4.5s ease-in-out infinite;
+  }
+}
+
+// Data Streams
+.data-streams {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.data-stream {
+  position: absolute;
+  width: 2px;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, var(--robo-gold-primary), transparent);
+  opacity: 0.3;
+  
+  &--1 {
+    top: 0;
+    left: 40%;
+    animation: dataStream1 3s ease-in-out infinite;
+  }
+  
+  &--2 {
+    top: 0;
+    right: 30%;
+    animation: dataStream2 4s ease-in-out infinite;
+  }
+  
+  &--3 {
+    top: 0;
+    left: 70%;
+    animation: dataStream3 3.5s ease-in-out infinite;
+  }
 }

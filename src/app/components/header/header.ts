@@ -9,13 +9,6 @@ import { NotificationService } from '../../services/notification.service';
   template: `
     <header class="header">
       <div class="logo">
-        <div class="logo-icon">
-          <img 
-            src="/images/coins/coin.png" 
-            alt="Robo Coin" 
-            class="logo-coin"
-          />
-        </div>
         <div class="logo-text-container">
           <div class="logo-text">IndoSwap</div>
           <div class="logo-badge">Robo DeFi</div>

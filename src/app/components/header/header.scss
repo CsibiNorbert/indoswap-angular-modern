@@ -1,5 +1,5 @@
 /* src/app/components/header/header.component.scss */
-/* Replace your existing header component SCSS with this */
+/* Simplified header styles - coin showcase moved to hero section */
 
 .header {
   padding: 1rem 2rem;
@@ -36,22 +36,6 @@
 
   &:hover {
     transform: scale(1.05);
-  }
-}
-
-.logo-icon {
-  position: relative;
-}
-
-.logo-coin {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  filter: var(--coin-glow);
-  animation: coinRotate 8s linear infinite;
-  
-  &:hover {
-    animation: coinGlow 1s ease-in-out infinite;
   }
 }
 
@@ -273,13 +257,6 @@
   }
 }
 
-// Dark theme support (already dark, but for consistency)
-@media (prefers-color-scheme: dark) {
-  .header {
-    border-bottom-color: rgba(255, 215, 0, 0.1);
-  }
-}
-
 // High contrast mode
 @media (prefers-contrast: high) {
   .header {
@@ -294,7 +271,6 @@
 
 // Reduced motion
 @media (prefers-reduced-motion: reduce) {
-  .logo-coin,
   .wallet-icon,
   .wallet-glow,
   .logo-badge {

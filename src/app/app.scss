@@ -1,42 +1,66 @@
 // Modern Angular app styles with CSS custom properties and animations
 :root {
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --color-primary: #8B4513;
-  --color-secondary: #B8860B;
-  --color-accent: #DAA520;
-  --color-success: #51cf66;
-  --color-warning: #ffd43b;
-  --color-error: #ff6b6b;
-  --border-radius: 0.5rem;
-  --transition: all 0.3s ease;
+  // Primary text and neutral colors
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  
+  // Main brand colors - Deep Ocean Blues with Gold Accents
+  --color-primary: #0f172a;      // Deep slate for backgrounds
+  --color-secondary: #1e293b;    // Medium slate for cards
+  --color-accent: #334155;       // Light slate for borders
+  
+  // Gold coin harmonized colors
+  --coin-gold: #fbbf24;          // Perfect match for coin highlights
+  --coin-gold-light: #fde047;    // Bright gold accents
+  --coin-gold-dark: #d97706;     // Deep gold shadows
+  
+  // Semantic colors
+  --color-success: #10b981;      // Emerald green
+  --color-warning: --coin-gold;  // Use coin gold for warnings
+  --color-error: #ef4444;        // Modern red
+  --color-info: #3b82f6;         // Bright blue
+  
+  // Interactive elements
+  --color-interactive: #6366f1;   // Indigo for buttons
+  --color-interactive-hover: #4f46e5;
+  
+  --border-radius: 0.75rem;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  // Robo Coin Theme Variables
-  --robo-dark-primary: #0a0a0a;
-  --robo-dark-secondary: #1a1a1a;
-  --robo-dark-accent: #2a2a2a;
-  --robo-gold-primary: #ffd700;
-  --robo-gold-secondary: #ffed4e;
-  --robo-gold-accent: #fbbf24;
-  --robo-silver: #c0c0c0;
-  --robo-chrome: #e5e7eb;
+  // Enhanced Robo Coin Theme - Ocean & Gold Harmony
+  --robo-ocean-deep: #0c1426;      // Ultra deep ocean
+  --robo-ocean-primary: #1e293b;    // Primary ocean blue
+  --robo-ocean-secondary: #334155;  // Secondary ocean
+  --robo-ocean-light: #475569;      // Light ocean accent
+  
+  --robo-gold-primary: #fbbf24;     // Primary coin gold
+  --robo-gold-secondary: #fde047;   // Light coin gold
+  --robo-gold-accent: #f59e0b;      // Warm gold accent
+  --robo-gold-deep: #d97706;        // Deep gold shadows
+  
+  --robo-silver: #e2e8f0;           // Premium silver
+  --robo-platinum: #f1f5f9;         // Platinum highlights
 
-  // Gradients
-  --robo-gold-gradient: linear-gradient(135deg, #ffd700, #ffed4e, #fbbf24);
-  --robo-metallic-gradient: linear-gradient(135deg, #c0c0c0, #e5e7eb, #f3f4f6);
-  --robo-dark-gradient: linear-gradient(135deg, #0a0a0a, #1a1a1a, #2a2a2a);
+  // Sophisticated gradients
+  --robo-gold-gradient: linear-gradient(135deg, #fbbf24, #fde047, #f59e0b);
+  --robo-ocean-gradient: linear-gradient(135deg, #0c1426, #1e293b, #334155);
+  --robo-premium-gradient: linear-gradient(135deg, #1e293b, #334155, #475569);
+  
+  // Glass morphism effects
+  --glass-bg: rgba(30, 41, 59, 0.4);
+  --glass-hover: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(251, 191, 36, 0.2);
+  --glass-glow: rgba(251, 191, 36, 0.1);
 
-  // Glass effects
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-hover: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 215, 0, 0.2);
+  // Premium shadows
+  --shadow-gold: 0 20px 40px rgba(251, 191, 36, 0.15);
+  --shadow-ocean: 0 20px 40px rgba(15, 23, 42, 0.4);
+  --shadow-premium: 0 25px 50px rgba(0, 0, 0, 0.25);
 
-  // Shadows
-  --shadow-gold: 0 8px 32px rgba(255, 215, 0, 0.3);
-  --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.5);
-
-  // Coin effects
-  --coin-glow: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+  // Coin effects enhanced
+  --coin-glow: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
+  --coin-glow-intense: drop-shadow(0 0 30px rgba(251, 191, 36, 0.8));
 }
 
 // Dark theme support
@@ -57,14 +81,27 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
   color: var(--text-primary);
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: var(--robo-ocean-gradient);
   min-height: 100vh;
 }
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: var(--robo-ocean-gradient);
   position: relative;
+  
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 20%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 .main-content {
@@ -85,25 +122,26 @@ body {
 
 // Global button styles
 .btn {
-  background: linear-gradient(135deg, #8B4513, #B8860B);
-  border: none;
-  border-radius: 16px;
+  background: var(--robo-gold-gradient);
+  border: 1px solid var(--robo-gold-primary);
+  border-radius: var(--border-radius);
   padding: 1rem 2rem;
   font-weight: 700;
   font-size: 1rem;
-  color: white;
+  color: var(--robo-ocean-deep);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  box-shadow: 0 4px 16px rgba(139, 69, 19, 0.3);
+  box-shadow: var(--shadow-gold);
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #A0522D, #DAA520);
+    background: linear-gradient(135deg, #fde047, #f59e0b, #d97706);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.4);
+    box-shadow: 0 25px 50px rgba(251, 191, 36, 0.25);
+    border-color: var(--robo-gold-secondary);
   }
 
   &:active {
@@ -114,29 +152,41 @@ body {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 16px rgba(139, 69, 19, 0.2);
+    box-shadow: var(--shadow-ocean);
   }
 
   &--large {
     padding: 1.25rem 2rem;
     font-size: 1.125rem;
-    border-radius: 20px;
+    border-radius: calc(var(--border-radius) + 4px);
   }
 
   &--secondary {
-    background: rgba(139, 69, 19, 0.1);
-    border: 1px solid rgba(139, 69, 19, 0.2);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     color: var(--text-primary);
-    box-shadow: none;
+    box-shadow: var(--shadow-ocean);
 
     &:hover:not(:disabled) {
-      background: rgba(139, 69, 19, 0.2);
-      border-color: rgba(139, 69, 19, 0.3);
+      background: var(--glass-hover);
+      border-color: var(--robo-gold-primary);
+      box-shadow: var(--shadow-gold);
     }
   }
 
   &--primary {
-    background: linear-gradient(135deg, #8B4513, #B8860B);
+    background: var(--robo-gold-gradient);
+  }
+
+  &--ocean {
+    background: var(--robo-premium-gradient);
+    border-color: var(--robo-ocean-light);
+    color: var(--text-primary);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #334155, #475569, #64748b);
+      border-color: var(--robo-gold-primary);
+    }
   }
 }
 
@@ -145,20 +195,21 @@ body {
   display: inline-flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background: rgba(139, 69, 19, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(139, 69, 19, 0.2);
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--glass-border);
   border-radius: 2rem;
   color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   white-space: nowrap;
 
   &:hover {
-    background: rgba(139, 69, 19, 0.15);
+    background: var(--glass-hover);
+    border-color: var(--robo-gold-primary);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-gold);
   }
 
   @media (max-width: 480px) {
@@ -181,7 +232,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #8B4513, #B8860B, #DAA520);
+  background: var(--robo-gold-gradient);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -191,10 +242,14 @@ body {
 // Animations
 @keyframes gradient-shift {
   0%, 100% {
-    background-position: 0% 50%;
+    background: linear-gradient(135deg, #fbbf24, #fde047, #f59e0b);
+    background-clip: text;
+    -webkit-background-clip: text;
   }
   50% {
-    background-position: 100% 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706, #fbbf24);
+    background-clip: text;
+    -webkit-background-clip: text;
   }
 }
 
