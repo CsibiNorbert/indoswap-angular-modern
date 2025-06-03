@@ -1,0 +1,184 @@
+// Modern SCSS with CSS Custom Properties and responsive design
+.header {
+  background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
+      padding: 1rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__logo {
+    h1 {
+      color: white;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+      @media (max-width: 768px) {
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  &__nav {
+    ul {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      gap: 2rem;
+
+      @media (max-width: 768px) {
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      li {
+        a {
+          color: rgba(255, 255, 255, 0.9);
+          text-decoration: none;
+          font-weight: 500;
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          transition: all 0.3s ease;
+
+          &:hover,
+          &:focus {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+          }
+
+          &:focus-visible {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+          }
+        }
+      }
+    }
+  }
+
+  &__wallet {
+    .wallet-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: white;
+
+      @media (max-width: 768px) {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .wallet-balance {
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .wallet-address {
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.875rem;
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+// Modern button styles with CSS custom properties
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+  }
+
+  &--primary {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &--secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+  }
+
+  // Button loading animation
+  &:disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: loading 1.5s infinite;
+  }
+}
+
+@keyframes loading {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+// CSS Custom Properties for theming
+:host {
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --color-accent: #ff6b6b;
+  --color-success: #51cf66;
+  --color-warning: #ffd43b;
+  --color-error: #ff6b6b;
+}
