@@ -1,0 +1,281 @@
+.price-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all 0.3s ease;
+
+  &.loading {
+    opacity: 0.7;
+  }
+
+  .price-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    text-align: center;
+    
+    .token-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      
+      .token-symbol {
+        font-weight: 700;
+        font-size: 0.875rem;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .token-name {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 400;
+      }
+    }
+
+    .price-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      
+      .current-price {
+        font-weight: 600;
+        font-size: 1.125rem;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+        animation: priceUpdate 0.3s ease-in-out;
+      }
+      
+      .price-change {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        &.positive {
+          color: #10b981;
+          
+          .change-indicator {
+            color: #10b981;
+          }
+        }
+        
+        &.negative {
+          color: #ef4444;
+          
+          .change-indicator {
+            color: #ef4444;
+          }
+        }
+        
+        .change-indicator {
+          font-size: 0.875rem;
+          animation: changeIndicator 0.5s ease-in-out;
+        }
+        
+        .change-value {
+          font-variant-numeric: tabular-nums;
+        }
+      }
+    }
+
+    .last-update {
+      font-size: 0.625rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+      font-weight: 400;
+    }
+  }
+
+  // Loading state
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #374151;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .loading-text {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+  }
+
+  // Error state
+  .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    
+    .error-icon {
+      font-size: 1.25rem;
+    }
+    
+    .error-text {
+      font-size: 0.75rem;
+      color: #ef4444;
+      font-weight: 400;
+    }
+    
+    .retry-button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
+  // No data state
+  .no-data {
+    padding: 1rem;
+    text-align: center;
+    
+    .no-data-text {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 400;
+    }
+  }
+}
+
+// Size variants
+.price-display {
+  &.small {
+    .price-container .price-info .current-price {
+      font-size: 0.875rem;
+    }
+    
+    .price-container .token-info .token-symbol {
+      font-size: 0.75rem;
+    }
+  }
+
+  &.large {
+    .price-container .price-info .current-price {
+      font-size: 1.5rem;
+    }
+    
+    .price-container .token-info .token-symbol {
+      font-size: 1rem;
+    }
+    
+    .price-container .price-info .price-change {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+// Inline variant
+.price-display.inline {
+  .price-container {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    
+    .price-info {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+}
+
+// Animations
+@keyframes priceUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+    color: #3b82f6;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes changeIndicator {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .price-display {
+    .price-container .price-info .current-price {
+      font-size: 1rem;
+    }
+    
+    .price-container .token-info .token-symbol {
+      font-size: 0.75rem;
+    }
+    
+    .price-container .price-info .price-change {
+      font-size: 0.625rem;
+    }
+  }
+}
+
+// Dark theme adjustments (already in dark theme)
+.price-display {
+  // Gradient background for premium feel
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  
+  &:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+} 

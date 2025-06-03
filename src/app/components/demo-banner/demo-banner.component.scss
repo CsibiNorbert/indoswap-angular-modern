@@ -1,0 +1,122 @@
+.demo-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  // Real-time mode styling
+  &.real-time {
+    background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
+    
+    .status-indicator {
+      background: #00ff88 !important;
+      animation: fastBlink 0.8s ease-in-out infinite !important;
+    }
+  }
+
+  &__content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 20px;
+  }
+
+  &__icon {
+    font-size: 20px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__title {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  &__subtitle {
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: 400;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      background: #00ff88;
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes fastBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .demo-banner {
+    &__content {
+      gap: 8px;
+      padding: 0 16px;
+    }
+
+    &__icon {
+      font-size: 18px;
+    }
+
+    &__title {
+      font-size: 13px;
+    }
+
+    &__subtitle {
+      font-size: 11px;
+    }
+
+    &__status {
+      font-size: 11px;
+    }
+  }
+} 

@@ -10,22 +10,14 @@
 
   &__header {
     text-align: center;
-    margin-bottom: 3rem;
-
-    @media (max-width: 768px) {
-      margin-bottom: 2rem;
-    }
+    margin-bottom: 2rem;
   }
 
   &__title {
-    font-size: clamp(2rem, 5vw, 2.5rem);
-    font-weight: 800;
-    margin-bottom: 0.75rem;
+    font-size: 2rem;
+    font-weight: 700;
     color: var(--text-primary);
-    background: linear-gradient(135deg, #8B4513, #B8860B, #DAA520);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
   }
 
   &__description {
@@ -121,27 +113,38 @@
   &__actions {
     margin-top: 2rem;
   }
+
+  // Live Price Overview Styles
+  .live-price-overview {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    
+    .price-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+    }
+  }
 }
 
 .token-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
   padding: 1.5rem;
-  margin-bottom: 0.5rem;
   position: relative;
-  transition: all 0.3s ease;
-  overflow: visible;
+  transition: var(--transition);
 
   &:hover {
-    border-color: rgba(139, 69, 19, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  &:focus-within {
-    border-color: rgba(139, 69, 19, 0.4);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+    border-color: rgba(var(--robo-gold-rgb), 0.3);
   }
 
   &__header {
@@ -149,19 +152,33 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
-    font-size: 0.875rem;
+    
+    .token-balance-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
+      
+      .token-price {
+        font-size: 0.75rem;
+        color: #10b981;
+        font-weight: 500;
+      }
+    }
   }
 
   &__label {
-    color: var(--text-secondary);
+    font-size: 0.875rem;
     font-weight: 600;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
   }
 
   &__balance {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-weight: 400;
   }
 
   &__content {
@@ -291,61 +308,73 @@
   animation: fadeInUp 0.2s ease-out;
 
   .token-option {
-    width: 100%;
-    background: transparent;
-    border: none;
-    padding: 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.75rem;
+    transition: var(--transition);
     cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-    &:last-child {
-      border-bottom: none;
-    }
+    text-align: left;
 
     &:hover {
-      background: rgba(139, 69, 19, 0.1);
+      background: rgba(var(--robo-gold-rgb), 0.1);
     }
 
     &.selected {
-      background: rgba(139, 69, 19, 0.15);
-      border-color: rgba(139, 69, 19, 0.2);
+      background: rgba(var(--robo-gold-rgb), 0.15);
+      border: 1px solid rgba(var(--robo-gold-rgb), 0.3);
     }
 
     .token-info {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+    }
 
-      .token-icon {
-        font-size: 1.5rem;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .token-symbol {
-        font-weight: 700;
-        color: var(--text-primary);
+    .token-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
+      
+      .token-balance {
         font-size: 0.875rem;
-        margin-bottom: 0.25rem;
-      }
-
-      .token-name {
         color: var(--text-secondary);
+        font-weight: 500;
+      }
+      
+      .token-price {
         font-size: 0.75rem;
+        color: #10b981;
+        font-weight: 400;
       }
     }
 
-    .token-balance {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
+    .token-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      border-radius: 50%;
+      background: rgba(var(--robo-gold-rgb), 0.1);
+    }
+
+    .token-symbol {
       font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .token-name {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.125rem;
     }
   }
 }

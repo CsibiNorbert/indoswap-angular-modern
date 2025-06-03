@@ -1,10 +1,11 @@
 import { Component, signal, effect } from '@angular/core';
 import { ButtonComponent } from '../shared/button/button.component';
+import { PriceDisplayComponent } from '../price-display/price-display.component';
 
 @Component({
   selector: 'app-hero',
   standalone: true,
-  imports: [ButtonComponent],
+  imports: [ButtonComponent, PriceDisplayComponent],
   template: `
     <section class="hero">
       <div class="container">
@@ -18,6 +19,16 @@ import { ButtonComponent } from '../shared/button/button.component';
           <p class="hero__description">
             Experience lightning-fast swaps, minimal fees, and maximum security. Our advanced routing algorithm finds the best prices across multiple liquidity pools, ensuring you get more value from every trade.
           </p>
+          
+          <!-- Live Price Ticker -->
+          <div class="live-price-ticker">
+            <h3 class="ticker-title">Live Prices</h3>
+            <div class="price-ticker-container">
+              <app-price-display symbol="BNB" [showName]="true" size="small" [inline]="true"></app-price-display>
+              <app-price-display symbol="BUSD" [showName]="true" size="small" [inline]="true"></app-price-display>
+              <app-price-display symbol="USDT" [showName]="true" size="small" [inline]="true"></app-price-display>
+            </div>
+          </div>
           
           <!-- Value Propositions -->
           <div class="hero__features">

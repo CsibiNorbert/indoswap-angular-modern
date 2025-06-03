@@ -6,6 +6,7 @@ export interface Token {
   readonly icon: string;
   readonly balance: number;
   readonly address?: string;
+  readonly decimals?: number;
 }
 
 export interface SwapData {

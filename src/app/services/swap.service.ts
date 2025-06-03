@@ -1,26 +1,19 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Token, SwapData } from '../models/interfaces';
+import { LivePriceService } from './live-price.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SwapService {
-  // Exchange rates mapping
-  private exchangeRates: { [key: string]: number } = {
-    'BNB-BUSD': 285.43,
-    'BUSD-BNB': 0.0035,
-    'BNB-USDT': 284.87,
-    'USDT-BNB': 0.0035,
-    'BUSD-USDT': 0.998,
-    'USDT-BUSD': 1.002
-  };
+  private readonly livePriceService = inject(LivePriceService);
 
-  // Default tokens
+  // Default tokens with updated data
   private defaultTokens: Token[] = [
-    { symbol: 'BNB', name: 'Binance Coin', icon: 'bnb', balance: 2.45 },
-    { symbol: 'BUSD', name: 'Binance USD', icon: 'busd', balance: 1250.00 },
-    { symbol: 'USDT', name: 'Tether USD', icon: 'usdt', balance: 500.00 }
+    { symbol: 'BNB', name: 'Binance Coin', icon: 'bnb', balance: 2.45, address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', decimals: 18 },
+    { symbol: 'BUSD', name: 'Binance USD', icon: 'busd', balance: 1250.00, address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', decimals: 18 },
+    { symbol: 'USDT', name: 'Tether USD', icon: 'usdt', balance: 500.00, address: '0x55d398326f99059fF775485246999027B3197955', decimals: 18 }
   ];
 
   // BehaviorSubject for compatibility
@@ -29,7 +22,7 @@ export class SwapService {
     toToken: this.defaultTokens[1],
     fromAmount: 0,
     toAmount: 0,
-    exchangeRate: this.exchangeRates['BNB-BUSD'],
+    exchangeRate: 1,
     priceImpact: 0.01,
     tradingFee: 0.25,
     minimumReceived: 0
@@ -47,7 +40,14 @@ export class SwapService {
   readonly isSwapping = this._isSwapping.asReadonly();
   readonly canSwap = computed(() => {
     const data = this._swapData();
-    return data.fromAmount > 0 && !this._isSwapping();
+    return data.fromAmount > 0 && !this._isSwapping() && this.livePriceService.prices().size > 0;
+  });
+
+  // Computed exchange rate using live prices
+  readonly currentExchangeRate = computed(() => {
+    const data = this._swapData();
+    const exchangeRate = this.livePriceService.getExchangeRate(data.fromToken.symbol, data.toToken.symbol);
+    return exchangeRate?.rate || 1;
   });
 
   getTokens(): Token[] {
@@ -56,10 +56,13 @@ export class SwapService {
 
   selectFromToken(token: Token): void {
     const currentData = this.swapDataSubject.value;
+    const exchangeRateData = this.livePriceService.getExchangeRate(token.symbol, currentData.toToken.symbol);
+    const exchangeRate = exchangeRateData?.rate || 1;
+    
     const newSwapData: SwapData = {
       ...currentData,
       fromToken: token,
-      exchangeRate: this.exchangeRates[`${token.symbol}-${currentData.toToken.symbol}`] || 1,
+      exchangeRate,
       fromAmount: 0,
       toAmount: 0,
       minimumReceived: 0
@@ -70,10 +73,13 @@ export class SwapService {
 
   selectToToken(token: Token): void {
     const currentData = this.swapDataSubject.value;
+    const exchangeRateData = this.livePriceService.getExchangeRate(currentData.fromToken.symbol, token.symbol);
+    const exchangeRate = exchangeRateData?.rate || 1;
+    
     const newSwapData: SwapData = {
       ...currentData,
       toToken: token,
-      exchangeRate: this.exchangeRates[`${currentData.fromToken.symbol}-${token.symbol}`] || 1,
+      exchangeRate,
       fromAmount: 0,
       toAmount: 0,
       minimumReceived: 0
@@ -84,41 +90,62 @@ export class SwapService {
 
   calculateSwap(fromAmount: number): SwapData {
     const currentData = this.swapDataSubject.value;
-    const rateKey = `${currentData.fromToken.symbol}-${currentData.toToken.symbol}`;
-    const exchangeRate = this.exchangeRates[rateKey] || 1;
+    const exchangeRateData = this.livePriceService.getExchangeRate(
+      currentData.fromToken.symbol, 
+      currentData.toToken.symbol,
+      fromAmount
+    );
+    
+    const exchangeRate = exchangeRateData?.rate || 1;
+    
+    // Calculate swap with slippage and fees
     const toAmount = fromAmount * exchangeRate;
-    const minimumReceived = toAmount * 0.995; // 0.5% slippage
+    const priceImpact = exchangeRateData?.priceImpact || this.calculatePriceImpact(fromAmount, currentData.fromToken.symbol);
+    const tradingFee = 0.25; // 0.25% trading fee
+    const feeAmount = toAmount * (tradingFee / 100);
+    const finalAmount = toAmount - feeAmount;
+    const slippagePercent = exchangeRateData?.slippage || 0.5;
+    const minimumReceived = finalAmount * (1 - slippagePercent / 100);
 
     const newSwapData: SwapData = {
       ...currentData,
       fromAmount,
-      toAmount,
+      toAmount: finalAmount,
       exchangeRate,
+      priceImpact,
+      tradingFee,
       minimumReceived
     };
 
     this.updateSwapData(newSwapData);
+    console.log('💱 Live swap data updated:', newSwapData);
     return newSwapData;
   }
 
   swapTokens(): void {
     const currentData = this.swapDataSubject.value;
+    const exchangeRateData = this.livePriceService.getExchangeRate(
+      currentData.toToken.symbol, 
+      currentData.fromToken.symbol
+    );
+    const exchangeRate = exchangeRateData?.rate || 1;
+    
     const newSwapData: SwapData = {
       ...currentData,
       fromToken: currentData.toToken,
       toToken: currentData.fromToken,
       fromAmount: 0,
       toAmount: 0,
-      exchangeRate: this.exchangeRates[`${currentData.toToken.symbol}-${currentData.fromToken.symbol}`] || 1,
+      exchangeRate,
       minimumReceived: 0
     };
 
     this.updateSwapData(newSwapData);
   }
 
-  private updateSwapData(newSwapData: SwapData): void {
-    this.swapDataSubject.next(newSwapData);
-    this._swapData.set(newSwapData);
+  private updateSwapData(newData: SwapData): void {
+    this._swapData.set(newData);
+    this.swapDataSubject.next(newData);
   }
 
   async executeSwap(swapData: SwapData): Promise<boolean> {
@@ -135,5 +162,50 @@ export class SwapService {
 
   get currentSwapData(): SwapData {
     return this.swapDataSubject.value;
+  }
+
+  /**
+   * Calculate price impact based on swap amount
+   */
+  private calculatePriceImpact(amount: number, tokenSymbol: string): number {
+    // Simple price impact calculation - in real DEX this would be more complex
+    const tokenPrice = this.getTokenPrice(tokenSymbol);
+    const swapValueUSD = amount * tokenPrice;
+    
+    // Base impact + amount-based impact
+    let impact = 0.01; // 0.01% base impact
+    
+    if (swapValueUSD > 100000) {
+      impact += 0.5; // Large trades have higher impact
+    } else if (swapValueUSD > 10000) {
+      impact += 0.2;
+    } else if (swapValueUSD > 1000) {
+      impact += 0.05;
+    }
+    
+    return impact;
+  }
+
+  /**
+   * Get live price for a token
+   */
+  getTokenPrice(symbol: string): number {
+    const tokenPrice = this.livePriceService.getTokenPrice(symbol);
+    return tokenPrice?.price || 0;
+  }
+
+  /**
+   * Get 24h price change for a token
+   */
+  getTokenPriceChange(symbol: string): number {
+    const tokenPrice = this.livePriceService.getTokenPrice(symbol);
+    return tokenPrice?.change24h || 0;
+  }
+
+  /**
+   * Check if live price data is available
+   */
+  hasLivePrices(): boolean {
+    return this.livePriceService.prices().size > 0;
   }
 } 

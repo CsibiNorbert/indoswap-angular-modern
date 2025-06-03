@@ -5,6 +5,7 @@ import { StatsComponent } from './components/stats/stats';
 import { SwapComponent } from './components/swap/swap';
 import { FooterComponent } from './components/footer/footer';
 import { NotificationComponent } from './components/notification/notification';
+import { DemoBannerComponent } from './components/demo-banner/demo-banner.component';
 
 @Component({
   selector: 'app-root',
@@ -15,10 +16,12 @@ import { NotificationComponent } from './components/notification/notification';
     StatsComponent,
     SwapComponent,
     FooterComponent, 
-    NotificationComponent
+    NotificationComponent,
+    DemoBannerComponent
   ],
   template: `
     <div class="app">
+      <app-demo-banner />
       <app-header />
       <app-notification />
       

@@ -5,210 +5,13 @@ import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
 import { Token } from '../../models/interfaces';
 import { ButtonComponent } from '../shared/button/button.component';
+import { PriceDisplayComponent } from '../price-display/price-display.component';
 
 @Component({
   selector: 'app-swap',
   standalone: true,
-  imports: [FormsModule, ButtonComponent],
-  template: `
-    <section class="swap">
-      <div class="container">
-        <div class="swap__wrapper">
-          <div class="swap__header">
-            <h2 class="swap__title">Swap Tokens</h2>
-            <p class="swap__description">
-              Trade tokens instantly with best rates and minimal slippage
-            </p>
-          </div>
-          
-          <div class="swap__card" #swapCard>
-            <!-- From Token Section -->
-            <div class="token-input" data-token-input="from">
-              <div class="token-input__header">
-                <span class="token-input__label">From</span>
-                <span class="token-input__balance">
-                  Balance: {{ swapService.swapData().fromToken.balance.toFixed(4) }}
-                </span>
-              </div>
-              
-              <div class="token-input__content">
-                <input 
-                  type="number" 
-                  class="token-input__amount"
-                  placeholder="0.0"
-                  [(ngModel)]="fromAmount"
-                  (ngModelChange)="onFromAmountChange($event)"
-                />
-                
-                <button 
-                  class="token-selector"
-                  (click)="toggleFromTokenList()"
-                  type="button"
-                >
-                  <div class="token-info">
-                    <div class="token-icon">{{ getTokenIcon(swapService.swapData().fromToken.symbol) }}</div>
-                    <span class="token-symbol">{{ swapService.swapData().fromToken.symbol }}</span>
-                  </div>
-                  <span class="chevron">▼</span>
-                </button>
-              </div>
-              
-              <!-- From Token Dropdown -->
-              @if (showFromTokenList()) {
-                <div class="token-list">
-                  @for (token of availableTokens(); track token.symbol) {
-                    <button 
-                      class="token-option"
-                      [class.selected]="token.symbol === swapService.swapData().fromToken.symbol"
-                      (click)="selectFromToken(token)"
-                      type="button"
-                    >
-                      <div class="token-info">
-                        <div class="token-icon">{{ getTokenIcon(token.symbol) }}</div>
-                        <div>
-                          <div class="token-symbol">{{ token.symbol }}</div>
-                          <div class="token-name">{{ token.name }}</div>
-                        </div>
-                      </div>
-                      <div class="token-balance">{{ token.balance.toFixed(4) }}</div>
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-            
-            <!-- Swap Button -->
-            <div class="swap__divider">
-              <button 
-                class="swap-direction-btn"
-                (click)="swapTokens()"
-                type="button"
-                [disabled]="swapService.isSwapping()"
-              >
-                ⇅
-              </button>
-            </div>
-            
-            <!-- To Token Section -->
-            <div class="token-input" data-token-input="to">
-              <div class="token-input__header">
-                <span class="token-input__label">To</span>
-                <span class="token-input__balance">
-                  Balance: {{ swapService.swapData().toToken.balance.toFixed(4) }}
-                </span>
-              </div>
-              
-              <div class="token-input__content">
-                <input 
-                  type="number" 
-                  class="token-input__amount"
-                  placeholder="0.0"
-                  [value]="swapService.swapData().toAmount.toFixed(6)"
-                  readonly
-                />
-                
-                <button 
-                  class="token-selector"
-                  (click)="toggleToTokenList()"
-                  type="button"
-                >
-                  <div class="token-info">
-                    <div class="token-icon">{{ getTokenIcon(swapService.swapData().toToken.symbol) }}</div>
-                    <span class="token-symbol">{{ swapService.swapData().toToken.symbol }}</span>
-                  </div>
-                  <span class="chevron">▼</span>
-                </button>
-              </div>
-              
-              <!-- To Token Dropdown -->
-              @if (showToTokenList()) {
-                <div class="token-list">
-                  @for (token of availableTokens(); track token.symbol) {
-                    <button 
-                      class="token-option"
-                      [class.selected]="token.symbol === swapService.swapData().toToken.symbol"
-                      (click)="selectToToken(token)"
-                      type="button"
-                    >
-                      <div class="token-info">
-                        <div class="token-icon">{{ getTokenIcon(token.symbol) }}</div>
-                        <div>
-                          <div class="token-symbol">{{ token.symbol }}</div>
-                          <div class="token-name">{{ token.name }}</div>
-                        </div>
-                      </div>
-                      <div class="token-balance">{{ token.balance.toFixed(4) }}</div>
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-            
-            <!-- Swap Details -->
-            @if (swapService.swapData().fromAmount > 0) {
-              <div class="swap__details">
-                <div class="swap-detail">
-                  <span>Exchange Rate</span>
-                  <span>1 {{ swapService.swapData().fromToken.symbol }} = {{ swapService.swapData().exchangeRate.toFixed(4) }} {{ swapService.swapData().toToken.symbol }}</span>
-                </div>
-                <div class="swap-detail">
-                  <span>Minimum Received</span>
-                  <span>{{ swapService.swapData().minimumReceived.toFixed(6) }} {{ swapService.swapData().toToken.symbol }}</span>
-                </div>
-                <div class="swap-detail">
-                  <span>Trading Fee</span>
-                  <span>{{ swapService.swapData().tradingFee }}%</span>
-                </div>
-                <div class="swap-detail">
-                  <span>Price Impact</span>
-                  <span>{{ swapService.swapData().priceImpact.toFixed(2) }}%</span>
-                </div>
-              </div>
-            }
-            
-            <!-- Action Buttons -->
-            <div class="swap__actions">
-              @if (!walletService.isConnected()) {
-                <app-button 
-                  variant="primary" 
-                  size="large"
-                  [fullWidth]="true"
-                  (clicked)="connectWallet()"
-                  [disabled]="walletService.isLoading()"
-                  [loading]="walletService.isLoading()"
-                  ariaLabel="Connect your wallet to start trading"
-                >
-                  @if (walletService.isLoading()) {
-                    Connecting...
-                  } @else {
-                    Connect Wallet
-                  }
-                </app-button>
-              } @else {
-                <app-button 
-                  variant="primary" 
-                  size="large"
-                  [fullWidth]="true"
-                  (clicked)="executeSwap()"
-                  [disabled]="!swapService.canSwap() || swapService.isSwapping()"
-                  [loading]="swapService.isSwapping()"
-                  ariaLabel="Execute token swap"
-                >
-                  @if (swapService.isSwapping()) {
-                    Swapping...
-                  } @else if (!swapService.canSwap()) {
-                    Enter Amount
-                  } @else {
-                    Swap Tokens
-                  }
-                </app-button>
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  `,
+  imports: [FormsModule, ButtonComponent, PriceDisplayComponent],
+  templateUrl: './swap.component.html',
   styleUrl: './swap.scss'
 })
 export class SwapComponent {
@@ -345,5 +148,12 @@ export class SwapComponent {
       'USDT': '💵'
     };
     return icons[symbol] || '🪙';
+  }
+
+  // Helper methods for template
+  formatUsdValue(amount: number, symbol: string): string {
+    if (!this.swapService.hasLivePrices()) return '';
+    const price = this.swapService.getTokenPrice(symbol);
+    return (amount * price).toFixed(2);
   }
 }
