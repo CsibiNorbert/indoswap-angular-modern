@@ -9,7 +9,7 @@ interface TokenPrice {
   change24h: number;
   volume24h: number;
   lastUpdated: number;
-  source: 'mock' | 'coingecko' | 'proxy' | 'pancakeswap';
+  source: 'mock' | 'binance';
 }
 
 interface ExchangeRate {
@@ -34,22 +34,25 @@ export class LivePriceService {
   private readonly lastUpdateTime = signal<number>(0);
   private readonly errorMessage = signal<string>('');
 
-  // FIXED: Use complete URLs with HTTPS - Added PancakeSwap for DEX prices
+  // Binance API endpoints - much better than CoinGecko!
   private readonly API_ENDPOINTS = {
-    // DEX Prices - PancakeSwap (Primary for trading)
-    pancakeInfo: 'https://api.pancakeswap.info/api/v2/tokens',
-    pancakeSubgraph: 'https://api.thegraph.com/subgraphs/name/pancakeswap/exchange',
-    // Market Prices - CoinGecko (Secondary for market data)
-    coingecko: 'https://api.coingecko.com/api/v3/simple/price',
-    // CORS proxy alternatives - trying multiple for better success rate
-    proxy1: 'https://api.allorigins.win/get?url=',
-    proxy2: 'https://corsproxy.io/?',
-    proxy3: 'https://cors.eu.org/',
-    // Fallback to mock data
-    mock: 'mock'
+    // Primary: Binance public data API (better CORS support)
+    binanceData: 'https://data-api.binance.vision/api/v3/ticker/24hr',
+    // Fallback: Main Binance API
+    binanceMain: 'https://api.binance.com/api/v3/ticker/24hr'
   } as const;
 
-  // Realistic mock data (updated with current market prices)
+  // Token mapping for Binance symbol pairs
+  private readonly TOKEN_SYMBOLS = new Map([
+    ['BNB', 'BNBUSDT'],
+    ['BUSD', 'BUSDUSDT'], 
+    ['USDC', 'USDCUSDT'],
+    ['ETH', 'ETHUSDT'],
+    ['BTCB', 'BTCUSDT'],
+    ['USDT', 'STABLE'] // USDT is our base stable, calculated as $1.00
+  ]);
+
+  // Realistic mock data for immediate display
   private readonly MOCK_PRICES = new Map<string, TokenPrice>([
     ['BNB', { 
       symbol: 'BNB', 
@@ -101,16 +104,6 @@ export class LivePriceService {
     }]
   ]);
 
-  // Token mapping for both APIs
-  private readonly TOKEN_IDS = new Map([
-    ['BNB', { coingecko: 'binancecoin', pancake: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c' }],
-    ['BUSD', { coingecko: 'binance-usd', pancake: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56' }], 
-    ['USDT', { coingecko: 'tether', pancake: '0x55d398326f99059fF775485246999027B3197955' }],
-    ['USDC', { coingecko: 'usd-coin', pancake: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d' }],
-    ['ETH', { coingecko: 'ethereum', pancake: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8' }],
-    ['BTCB', { coingecko: 'bitcoin', pancake: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c' }]
-  ]);
-
   // Public computed signals
   readonly prices = computed(() => this.tokenPrices());
   readonly loading = computed(() => this.isLoading());
@@ -118,41 +111,143 @@ export class LivePriceService {
   readonly error = computed(() => this.errorMessage());
 
   constructor() {
-    console.log('🚀 LivePriceService initialized');
+    console.log('🚀 Binance Price Service initialized');
     this.initializePriceUpdates();
   }
 
   private initializePriceUpdates(): void {
-    // Start with mock data immediately
+    // Start with mock data for immediate display
     this.loadMockData();
     
-    // Try to get real data
-    this.fetchAllPrices();
+    // Fetch live Binance data
+    this.fetchBinancePrices();
     
-    // Set up periodic updates with realistic fluctuations
-    interval(10000).subscribe(() => { // Every 10 seconds
-      this.updateWithFluctuation();
+    // Set up periodic updates every 10 seconds
+    interval(10000).subscribe(() => {
+      this.fetchBinancePrices();
     });
   }
 
   private loadMockData(): void {
     this.tokenPrices.set(new Map(this.MOCK_PRICES));
     this.lastUpdateTime.set(Date.now());
-    this.errorMessage.set('Demo Mode: Using realistic demo prices');
-    console.log('📊 Mock prices loaded:', Array.from(this.MOCK_PRICES.keys()));
+    this.errorMessage.set('Demo Mode: Using realistic demo prices with live fluctuations');
+    console.log('✅ Mock prices loaded, fetching live Binance data...');
   }
 
-  private updateWithFluctuation(): void {
+  async fetchBinancePrices(): Promise<void> {
+    this.isLoading.set(true);
+    console.log('🔍 Fetching live prices from Binance...');
+
+    // Try primary Binance data API first (better CORS)
+    try {
+      const response = await this.tryBinanceEndpoint(this.API_ENDPOINTS.binanceData);
+      if (response && response.length > 0) {
+        const prices = this.parseBinanceResponse(response);
+        if (prices.size > 0) {
+          this.tokenPrices.set(prices);
+          this.lastUpdateTime.set(Date.now());
+          this.errorMessage.set(`Live Binance Prices • Updates every 10 seconds • ${prices.size} tokens`);
+          console.log('✅ Live Binance prices updated successfully:', Array.from(prices.keys()));
+          this.isLoading.set(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Primary Binance endpoint failed, trying fallback...', error);
+    }
+
+    // Try fallback Binance main API
+    try {
+      const response = await this.tryBinanceEndpoint(this.API_ENDPOINTS.binanceMain);
+      if (response && response.length > 0) {
+        const prices = this.parseBinanceResponse(response);
+        if (prices.size > 0) {
+          this.tokenPrices.set(prices);
+          this.lastUpdateTime.set(Date.now());
+          this.errorMessage.set(`Live Binance Prices (Fallback) • Updates every 10 seconds • ${prices.size} tokens`);
+          console.log('✅ Binance fallback API succeeded:', Array.from(prices.keys()));
+          this.isLoading.set(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Binance fallback failed:', error);
+    }
+
+    // If both fail, add realistic fluctuations to demo data
+    this.updateDemoWithFluctuation();
+    this.errorMessage.set('Demo Mode: Realistic demo prices with live fluctuations (Binance unavailable)');
+    console.log('📊 Using demo mode with realistic fluctuations');
+    
+    this.isLoading.set(false);
+  }
+
+  private async tryBinanceEndpoint(endpoint: string): Promise<any[]> {
+    console.log('🔗 Trying Binance endpoint:', endpoint);
+    
+    const response = await this.http.get<any[]>(endpoint).pipe(
+      retry(2),
+      catchError(this.handleHttpError.bind(this))
+    ).toPromise();
+
+    return response || []; // Ensure we always return an array
+  }
+
+  private parseBinanceResponse(data: any[]): Map<string, TokenPrice> {
+    const prices = new Map<string, TokenPrice>();
+    
+    try {
+      // Create a lookup map for faster symbol matching
+      const symbolData = new Map();
+      data.forEach(item => {
+        symbolData.set(item.symbol, item);
+      });
+
+      for (const [tokenSymbol, binanceSymbol] of this.TOKEN_SYMBOLS.entries()) {
+        if (binanceSymbol === 'STABLE') {
+          // USDT is our stable base - always $1.00
+          prices.set(tokenSymbol, {
+            symbol: tokenSymbol,
+            price: 1.0000,
+            change24h: 0.01,
+            volume24h: 3000000000, // High volume for USDT
+            lastUpdated: Date.now(),
+            source: 'binance'
+          });
+        } else {
+          const ticker = symbolData.get(binanceSymbol);
+          if (ticker) {
+            prices.set(tokenSymbol, {
+              symbol: tokenSymbol,
+              price: parseFloat(ticker.lastPrice),
+              change24h: parseFloat(ticker.priceChangePercent),
+              volume24h: parseFloat(ticker.quoteVolume),
+              lastUpdated: Date.now(),
+              source: 'binance'
+            });
+          }
+        }
+      }
+
+      console.log('✅ Parsed Binance data for tokens:', Array.from(prices.keys()));
+      return prices;
+    } catch (error) {
+      console.error('❌ Error parsing Binance response:', error);
+      return new Map();
+    }
+  }
+
+  private updateDemoWithFluctuation(): void {
     const currentPrices = new Map(this.tokenPrices());
-    let hasChanges = false;
     
     for (const [symbol, priceData] of currentPrices.entries()) {
       // Generate realistic fluctuation (-0.3% to +0.3%)
-      const fluctuation = (Math.random() - 0.5) * 0.006; // ±0.3%
+      const fluctuation = (Math.random() - 0.5) * 0.006;
       const newPrice = priceData.price * (1 + fluctuation);
       
       // Update 24h change slightly
-      const changeFluctuation = (Math.random() - 0.5) * 0.05; // ±0.025%
+      const changeFluctuation = (Math.random() - 0.5) * 0.05;
       const newChange24h = priceData.change24h + changeFluctuation;
       
       currentPrices.set(symbol, {
@@ -161,182 +256,10 @@ export class LivePriceService {
         change24h: parseFloat(newChange24h.toFixed(2)),
         lastUpdated: Date.now()
       });
-      hasChanges = true;
     }
     
-    if (hasChanges) {
-      this.tokenPrices.set(currentPrices);
-      this.lastUpdateTime.set(Date.now());
-      console.log('🔄 Prices updated with fluctuations');
-    }
-  }
-
-  async fetchAllPrices(): Promise<void> {
-    this.isLoading.set(true);
-    console.log('🔍 Attempting to fetch live prices...');
-
-    // Try PancakeSwap first (better for DEX)
-    try {
-      console.log('🥞 Trying PancakeSwap API...');
-      const pancakeData = await this.tryPancakeSwapMethod();
-      if (pancakeData && pancakeData.size > 0) {
-        this.tokenPrices.set(pancakeData);
-        this.lastUpdateTime.set(Date.now());
-        this.errorMessage.set('Live DEX prices from PancakeSwap');
-        console.log('✅ PancakeSwap prices fetched successfully!');
-        this.isLoading.set(false);
-        return;
-      }
-    } catch (error) {
-      console.log('⚠️ PancakeSwap method failed:', error);
-    }
-
-    // Try multiple proxy methods for CoinGecko as fallback
-    const proxyMethods = [
-      () => this.tryProxyMethod('proxy1'),
-      () => this.tryProxyMethod('proxy2'), 
-      () => this.tryProxyMethod('proxy3')
-    ];
-
-    for (const [index, proxyMethod] of proxyMethods.entries()) {
-      try {
-        console.log(`🔗 Trying CoinGecko proxy method ${index + 1}/3...`);
-        const liveData = await proxyMethod();
-        if (liveData && liveData.size > 0) {
-          this.tokenPrices.set(liveData);
-          this.lastUpdateTime.set(Date.now());
-          this.errorMessage.set(`Live market prices from CoinGecko (Proxy ${index + 1})`);
-          console.log(`✅ CoinGecko prices fetched successfully via proxy ${index + 1}!`);
-          this.isLoading.set(false);
-          return;
-        }
-      } catch (error) {
-        console.log(`⚠️ CoinGecko proxy method ${index + 1} failed:`, error);
-      }
-    }
-
-    try {
-      // Last attempt: Try direct CoinGecko API (will likely fail due to CORS)
-      console.log('🔗 Trying direct CoinGecko API...');
-      const directData = await this.tryDirectMethod();
-      if (directData && directData.size > 0) {
-        this.tokenPrices.set(directData);
-        this.lastUpdateTime.set(Date.now());
-        this.errorMessage.set('Live market prices from CoinGecko (Direct)');
-        console.log('✅ Direct CoinGecko API succeeded unexpectedly!');
-        this.isLoading.set(false);
-        return;
-      }
-    } catch (error) {
-      console.log('⚠️ Direct method failed (expected due to CORS):', error);
-    }
-
-    // Fallback: Keep mock data but update error message
-    console.log('📊 All live price methods failed - using realistic demo prices');
-    this.errorMessage.set('Demo Mode: Live APIs unavailable, using realistic demo prices');
-    
-    this.isLoading.set(false);
-  }
-
-  private async tryPancakeSwapMethod(): Promise<Map<string, TokenPrice> | null> {
-    try {
-      // Use PancakeSwap Info API
-      const response = await this.http.get<any>(this.API_ENDPOINTS.pancakeInfo).pipe(
-        retry(2),
-        catchError(this.handleHttpError.bind(this))
-      ).toPromise();
-
-      if (response && response.data) {
-        return this.parsePancakeSwapResponse(response.data);
-      }
-    } catch (error) {
-      console.log('⚠️ PancakeSwap Info API failed, trying fallback...');
-    }
-    
-    return null;
-  }
-
-  private parsePancakeSwapResponse(data: any): Map<string, TokenPrice> {
-    const prices = new Map<string, TokenPrice>();
-    
-    for (const [symbol, tokenInfo] of this.TOKEN_IDS.entries()) {
-      const tokenAddress = tokenInfo.pancake.toLowerCase();
-      const tokenData = data[tokenAddress];
-      
-      if (tokenData) {
-        prices.set(symbol, {
-          symbol,
-          price: parseFloat(tokenData.price),
-          change24h: parseFloat(tokenData.price_change_percentage_24h) || 0,
-          volume24h: parseFloat(tokenData.quote_volume_24h) || 0,
-          lastUpdated: Date.now(),
-          source: 'pancakeswap'
-        });
-      }
-    }
-    
-    return prices;
-  }
-
-  private async tryProxyMethod(proxyKey: 'proxy1' | 'proxy2' | 'proxy3'): Promise<Map<string, TokenPrice> | null> {
-    const tokenIds = Array.from(this.TOKEN_IDS.values()).map(token => token.coingecko).join(',');
-    const targetUrl = `${this.API_ENDPOINTS.coingecko}?ids=${tokenIds}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_last_updated_at=true`;
-    
-    // Use the specified proxy with proper type casting
-    const proxyUrl = `${this.API_ENDPOINTS[proxyKey]}${encodeURIComponent(targetUrl)}`;
-    
-    console.log('🔗 Trying proxy URL:', proxyUrl);
-    
-    const response = await this.http.get<any>(proxyUrl).pipe(
-      retry(2),
-      catchError(this.handleHttpError.bind(this))
-    ).toPromise();
-
-    if (response && response.contents) {
-      const priceData = JSON.parse(response.contents);
-      return this.parseCoinGeckoResponse(priceData);
-    }
-    
-    return null;
-  }
-
-  private async tryDirectMethod(): Promise<Map<string, TokenPrice> | null> {
-    const tokenIds = Array.from(this.TOKEN_IDS.values()).map(token => token.coingecko).join(',');
-    const url = `${this.API_ENDPOINTS.coingecko}?ids=${tokenIds}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_last_updated_at=true`;
-    
-    console.log('🔗 Trying direct URL:', url);
-    
-    const response = await this.http.get<any>(url).pipe(
-      retry(1),
-      catchError(this.handleHttpError.bind(this))
-    ).toPromise();
-
-    if (response) {
-      return this.parseCoinGeckoResponse(response);
-    }
-    
-    return null;
-  }
-
-  private parseCoinGeckoResponse(data: any): Map<string, TokenPrice> {
-    const prices = new Map<string, TokenPrice>();
-    
-    for (const [symbol, tokenInfo] of this.TOKEN_IDS.entries()) {
-      const coinGeckoId = tokenInfo.coingecko;
-      const coinData = data[coinGeckoId];
-      if (coinData) {
-        prices.set(symbol, {
-          symbol,
-          price: coinData.usd,
-          change24h: coinData.usd_24h_change || 0,
-          volume24h: coinData.usd_24h_vol || 0,
-          lastUpdated: (coinData.last_updated_at || Date.now() / 1000) * 1000,
-          source: 'coingecko'
-        });
-      }
-    }
-    
-    return prices;
+    this.tokenPrices.set(currentPrices);
+    this.lastUpdateTime.set(Date.now());
   }
 
   private handleHttpError = (error: HttpErrorResponse) => {
@@ -347,10 +270,10 @@ export class LivePriceService {
     });
     
     // Return empty result to continue with fallback
-    return of(null);
+    return of([]);
   };
 
-  // Public methods
+  // Public methods for components
   getTokenPrice(symbol: string): TokenPrice | null {
     return this.tokenPrices().get(symbol.toUpperCase()) || null;
   }
@@ -408,11 +331,11 @@ export class LivePriceService {
   }
 
   async refreshPrices(): Promise<void> {
-    await this.fetchAllPrices();
+    await this.fetchBinancePrices();
   }
 
   getSupportedTokens(): string[] {
-    return Array.from(this.TOKEN_IDS.keys());
+    return Array.from(this.TOKEN_SYMBOLS.keys());
   }
 
   isPriceStale(): boolean {
@@ -428,9 +351,7 @@ export class LivePriceService {
     const firstPrice = Array.from(prices.values())[0];
     switch (firstPrice.source) {
       case 'mock': return 'Demo Prices';
-      case 'proxy': return 'Live Prices (Proxy)';
-      case 'coingecko': return 'Live Prices (CoinGecko)';
-      case 'pancakeswap': return 'Live DEX Prices (PancakeSwap)';
+      case 'binance': return 'Live Binance Prices';
       default: return 'Unknown';
     }
   }
