@@ -1,11 +1,26 @@
 .swap {
   padding: 6rem 0;
-  background: linear-gradient(135deg, rgba(139, 69, 19, 0.03) 0%, rgba(184, 134, 11, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(26, 26, 26, 0.95) 50%, rgba(42, 42, 42, 0.90) 100%);
   position: relative;
+  min-height: 100vh;
+
+  // Add overlay for better contrast
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(139, 69, 19, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
   &__wrapper {
     max-width: 480px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
   }
 
   &__header {
@@ -16,25 +31,25 @@
   &__title {
     font-size: 2rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--text-dark-primary);
     margin-bottom: 0.5rem;
   }
 
   &__description {
     font-size: 1rem;
-    color: var(--text-secondary);
+    color: var(--text-dark-secondary);
     line-height: 1.5;
   }
 
   &__card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--glass-dark-bg);
+    backdrop-filter: blur(30px);
+    border: 1px solid var(--glass-dark-border);
     border-radius: 24px;
     padding: 2rem;
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: visible;
 
@@ -53,8 +68,8 @@
     z-index: 10;
 
     .swap-direction-btn {
-      background: rgba(139, 69, 19, 0.1);
-      border: 2px solid rgba(139, 69, 19, 0.2);
+      background: rgba(26, 26, 26, 0.9);
+      border: 2px solid rgba(139, 69, 19, 0.4);
       border-radius: 50%;
       width: 48px;
       height: 48px;
@@ -62,15 +77,17 @@
       align-items: center;
       justify-content: center;
       font-size: 1.25rem;
-      color: var(--text-primary);
+      color: var(--text-dark-primary);
       cursor: pointer;
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
       &:hover:not(:disabled) {
-        background: rgba(139, 69, 19, 0.2);
-        border-color: rgba(139, 69, 19, 0.4);
-        transform: rotate(180deg);
+        background: rgba(42, 42, 42, 0.9);
+        border-color: rgba(139, 69, 19, 0.6);
+        transform: rotate(180deg) scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
       }
 
       &:disabled {
@@ -81,12 +98,12 @@
   }
 
   &__details {
-    background: rgba(139, 69, 19, 0.05);
-    border: 1px solid rgba(139, 69, 19, 0.1);
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid rgba(139, 69, 19, 0.2);
     border-radius: 16px;
     padding: 1.5rem;
     margin: 1.5rem 0;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
 
     .swap-detail {
       display: flex;
@@ -100,11 +117,11 @@
       }
 
       span:first-child {
-        color: var(--text-secondary);
+        color: var(--text-dark-secondary);
       }
 
       span:last-child {
-        color: var(--text-primary);
+        color: var(--text-dark-primary);
         font-weight: 600;
       }
     }
@@ -118,9 +135,10 @@
   .live-price-overview {
     margin-top: 1.5rem;
     padding: 1rem;
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(26, 26, 26, 0.8);
     border-radius: 0.75rem;
-    border: 1px solid rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    backdrop-filter: blur(15px);
     
     .price-overview-grid {
       display: grid;
@@ -136,15 +154,16 @@
 }
 
 .token-input {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--glass-dark-bg);
+  border: 1px solid var(--glass-dark-border);
   border-radius: 1rem;
   padding: 1.5rem;
   position: relative;
   transition: var(--transition);
 
   &:hover {
-    border-color: rgba(var(--robo-gold-rgb), 0.3);
+    border-color: rgba(139, 69, 19, 0.4);
+    background: rgba(26, 26, 26, 0.9);
   }
 
   &__header {
@@ -170,14 +189,14 @@
   &__label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-dark-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   &__balance {
     font-size: 0.75rem;
-    color: var(--text-tertiary);
+    color: var(--text-dark-tertiary);
     font-weight: 400;
   }
 
@@ -196,12 +215,12 @@
     outline: none;
     font-size: 1.75rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-dark-primary);
     padding: 0;
     min-width: 0;
 
     &::placeholder {
-      color: var(--text-secondary);
+      color: var(--text-dark-secondary);
       opacity: 0.7;
     }
 
@@ -226,8 +245,8 @@
 }
 
 .token-selector {
-  background: rgba(139, 69, 19, 0.1);
-  border: 1px solid rgba(139, 69, 19, 0.2);
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid rgba(139, 69, 19, 0.3);
   border-radius: 50px;
   padding: 0.75rem 1rem;
   display: flex;
@@ -241,11 +260,13 @@
   flex-shrink: 0;
   position: relative;
   z-index: 2;
+  backdrop-filter: blur(10px);
 
   &:hover {
-    background: rgba(139, 69, 19, 0.15);
-    border-color: rgba(139, 69, 19, 0.3);
+    background: rgba(42, 42, 42, 0.9);
+    border-color: rgba(139, 69, 19, 0.5);
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   &:focus {
@@ -273,7 +294,7 @@
 
   .token-symbol {
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--text-dark-primary);
     font-size: 0.875rem;
     white-space: nowrap;
     overflow: hidden;
@@ -282,7 +303,7 @@
 
   .chevron {
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--text-dark-secondary);
     transition: transform 0.3s ease;
     flex-shrink: 0;
   }
@@ -292,20 +313,56 @@
   }
 }
 
+// Add backdrop overlay for better dropdown visibility
+.dropdown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .token-list {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--dropdown-dark-bg);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--dropdown-dark-border);
   border-radius: 16px;
   margin-top: 0.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   z-index: 100;
   overflow: hidden;
   animation: fadeInUp 0.2s ease-out;
+  max-height: 300px;
+  overflow-y: auto;
+
+  // Custom scrollbar for dark theme
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(42, 42, 42, 0.5);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(139, 69, 19, 0.6);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(139, 69, 19, 0.8);
+    }
+  }
 
   .token-option {
     display: flex;
@@ -321,12 +378,13 @@
     text-align: left;
 
     &:hover {
-      background: rgba(var(--robo-gold-rgb), 0.1);
+      background: rgba(42, 42, 42, 0.8);
+      backdrop-filter: blur(10px);
     }
 
     &.selected {
-      background: rgba(var(--robo-gold-rgb), 0.15);
-      border: 1px solid rgba(var(--robo-gold-rgb), 0.3);
+      background: rgba(139, 69, 19, 0.2);
+      border: 1px solid rgba(139, 69, 19, 0.4);
     }
 
     .token-info {
@@ -343,7 +401,7 @@
       
       .token-balance {
         font-size: 0.875rem;
-        color: var(--text-secondary);
+        color: var(--text-dark-secondary);
         font-weight: 500;
       }
       
@@ -362,18 +420,18 @@
       justify-content: center;
       font-size: 1.25rem;
       border-radius: 50%;
-      background: rgba(var(--robo-gold-rgb), 0.1);
+      background: rgba(139, 69, 19, 0.2);
     }
 
     .token-symbol {
       font-weight: 600;
-      color: var(--text-primary);
+      color: var(--text-dark-primary);
       font-size: 0.875rem;
     }
 
     .token-name {
       font-size: 0.75rem;
-      color: var(--text-secondary);
+      color: var(--text-dark-secondary);
       margin-top: 0.125rem;
     }
   }
@@ -388,6 +446,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
