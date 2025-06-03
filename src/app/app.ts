@@ -21,7 +21,7 @@ import { DemoBannerComponent } from './components/demo-banner/demo-banner.compon
   ],
   template: `
     <div class="app">
-      <app-demo-banner />
+      <!-- <app-demo-banner /> -->
       <app-header />
       <app-notification />
       
