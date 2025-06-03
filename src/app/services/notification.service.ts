@@ -1,70 +1,57 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { NotificationData } from '../models/interfaces';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
-  // Modern Angular signals for reactive state management
-  private readonly _notifications = signal<NotificationData[]>([]);
+  // BehaviorSubject for compatibility
+  private notificationSubject = new BehaviorSubject<NotificationData | null>(null);
+  
+  // Modern Angular signal
+  private readonly _notification = signal<NotificationData | null>(null);
 
-  // Public readonly access to notifications
-  readonly notifications = this._notifications.asReadonly();
-  readonly hasNotifications = computed(() => this._notifications().length > 0);
-  readonly unreadCount = computed(() => this._notifications().length);
+  // Observable for reactive programming
+  notification$: Observable<NotificationData | null> = this.notificationSubject.asObservable();
 
-  showNotification(
-    type: NotificationData['type'],
-    message: string,
-    autoClose: boolean = true
-  ): void {
+  // Read-only signal access
+  readonly notification = this._notification.asReadonly();
+
+  show(message: string, type: 'success' | 'error' | 'info' = 'info', duration: number = 3000): void {
     const notification: NotificationData = {
-      id: this.generateId(),
-      type,
       message,
-      timestamp: new Date(),
-      autoClose
+      type,
+      duration
     };
 
-    // Add notification to the beginning of the array
-    this._notifications.update(notifications => [notification, ...notifications]);
+    // Update both subject and signal
+    this.notificationSubject.next(notification);
+    this._notification.set(notification);
 
-    // Auto-close notification after 5 seconds if autoClose is true
-    if (autoClose) {
+    // Auto-hide notification
+    if (duration > 0) {
       setTimeout(() => {
-        this.removeNotification(notification.id);
-      }, 5000);
+        this.hide();
+      }, duration);
     }
   }
 
-  removeNotification(id: string): void {
-    this._notifications.update(notifications => 
-      notifications.filter(notification => notification.id !== id)
-    );
+  hide(): void {
+    this.notificationSubject.next(null);
+    this._notification.set(null);
   }
 
-  clearAllNotifications(): void {
-    this._notifications.set([]);
+  // Convenience methods
+  showSuccess(message: string, duration: number = 3000): void {
+    this.show(message, 'success', duration);
   }
 
-  // Convenience methods for different notification types
-  showSuccess(message: string, autoClose: boolean = true): void {
-    this.showNotification('success', message, autoClose);
+  showError(message: string, duration: number = 5000): void {
+    this.show(message, 'error', duration);
   }
 
-  showError(message: string, autoClose: boolean = false): void {
-    this.showNotification('error', message, autoClose);
-  }
-
-  showWarning(message: string, autoClose: boolean = true): void {
-    this.showNotification('warning', message, autoClose);
-  }
-
-  showInfo(message: string, autoClose: boolean = true): void {
-    this.showNotification('info', message, autoClose);
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  showInfo(message: string, duration: number = 3000): void {
+    this.show(message, 'info', duration);
   }
 } 

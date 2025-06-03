@@ -25,8 +25,7 @@ import { NotificationService } from '../../services/notification.service';
         <div class="header__wallet">
           @if (walletService.isConnected()) {
             <div class="wallet-info">
-              <span class="wallet-balance">{{ walletService.formattedBalance() }} ETH</span>
-              <span class="wallet-address">{{ formatAddress(walletService.walletInfo().address) }}</span>
+              <span class="wallet-address">{{ walletService.shortAddress() }}</span>
               <button 
                 class="btn btn--secondary"
                 (click)="disconnectWallet()"
@@ -70,17 +69,12 @@ export class HeaderComponent {
     }
   }
 
-  async disconnectWallet(): Promise<void> {
-    await this.walletService.disconnectWallet();
+  disconnectWallet(): void {
+    this.walletService.disconnectWallet();
     this.notificationService.showInfo('Wallet disconnected');
   }
 
   toggleMenu(): void {
     this.isMenuOpen.update(isOpen => !isOpen);
-  }
-
-  protected formatAddress(address: string): string {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   }
 }

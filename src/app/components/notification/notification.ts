@@ -7,7 +7,7 @@ import { NotificationService } from '../../services/notification.service';
   imports: [],
   template: `
     <div class="notification-container">
-      @for (notification of notificationService.notifications(); track notification.id) {
+      @if (notificationService.notification(); as notification) {
         <div 
           class="notification notification--{{ notification.type }}"
           [attr.aria-live]="notification.type === 'error' ? 'assertive' : 'polite'"
@@ -18,7 +18,6 @@ import { NotificationService } from '../../services/notification.service';
               @switch (notification.type) {
                 @case ('success') { ✅ }
                 @case ('error') { ❌ }
-                @case ('warning') { ⚠️ }
                 @case ('info') { ℹ️ }
               }
             </div>
@@ -27,7 +26,7 @@ import { NotificationService } from '../../services/notification.service';
             </div>
             <button 
               class="notification__close"
-              (click)="removeNotification(notification.id)"
+              (click)="hideNotification()"
               aria-label="Close notification"
             >
               ×
@@ -43,7 +42,7 @@ export class NotificationComponent {
   // Modern Angular dependency injection with inject function
   protected readonly notificationService = inject(NotificationService);
 
-  removeNotification(id: string): void {
-    this.notificationService.removeNotification(id);
+  hideNotification(): void {
+    this.notificationService.hide();
   }
 }
