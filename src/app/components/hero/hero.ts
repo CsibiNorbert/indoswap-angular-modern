@@ -17,23 +17,45 @@ import { Component, signal, effect } from '@angular/core';
           
           <!-- Main Coin Showcase Section -->
           <div class="coin-showcase">
-            <div class="main-coin-container">
-              <!-- Giant Center Coin -->
-              <div class="main-coin">
-                <img 
-                  src="/images/coins/coin.png" 
-                  alt="Main Robo Coin" 
-                  class="giant-coin"
-                />
-                <div class="coin-glow-ring"></div>
-                <div class="coin-glow-ring coin-glow-ring--2"></div>
+            <div class="dual-coin-container">
+              <!-- First Coin -->
+              <div class="main-coin-container">
+                <div class="main-coin">
+                  <img 
+                    src="/images/coins/coin.png" 
+                    alt="Main Robo Coin" 
+                    class="giant-coin"
+                  />
+                  <div class="coin-glow-ring"></div>
+                  <div class="coin-glow-ring coin-glow-ring--2"></div>
+                </div>
+                
+                <!-- Platform with Rings -->
+                <div class="coin-platform">
+                  <div class="platform-ring platform-ring--1"></div>
+                  <div class="platform-ring platform-ring--2"></div>
+                  <div class="platform-ring platform-ring--3"></div>
+                </div>
               </div>
-              
-              <!-- Platform with Rings -->
-              <div class="coin-platform">
-                <div class="platform-ring platform-ring--1"></div>
-                <div class="platform-ring platform-ring--2"></div>
-                <div class="platform-ring platform-ring--3"></div>
+
+              <!-- Second Coin - Slightly Bigger, Opposite Direction -->
+              <div class="secondary-coin-container">
+                <div class="secondary-coin">
+                  <img 
+                    src="/images/coins/coin.png" 
+                    alt="Secondary Robo Coin" 
+                    class="giant-coin-secondary"
+                  />
+                  <div class="coin-glow-ring-secondary"></div>
+                  <div class="coin-glow-ring-secondary coin-glow-ring-secondary--2"></div>
+                </div>
+                
+                <!-- Platform with Rings - Opposite Direction -->
+                <div class="coin-platform-secondary">
+                  <div class="platform-ring-secondary platform-ring-secondary--1"></div>
+                  <div class="platform-ring-secondary platform-ring-secondary--2"></div>
+                  <div class="platform-ring-secondary platform-ring-secondary--3"></div>
+                </div>
               </div>
             </div>
           </div>

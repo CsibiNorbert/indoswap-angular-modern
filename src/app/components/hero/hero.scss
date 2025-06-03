@@ -505,14 +505,61 @@
   text-align: center;
 }
 
+.dual-coin-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: nowrap;
+  
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
 .main-coin-container {
   position: relative;
-  width: 400px;
-  height: 400px;
-  margin: 0 auto;
+  width: 350px;
+  height: 350px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    width: 280px;
+    height: 280px;
+  }
+  
+  @media (max-width: 600px) {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+.secondary-coin-container {
+  position: relative;
+  width: 380px;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    width: 310px;
+    height: 310px;
+  }
+  
+  @media (max-width: 600px) {
+    width: 330px;
+    height: 330px;
+  }
 }
 
 .main-coin {
@@ -520,12 +567,46 @@
   z-index: 10;
   
   .giant-coin {
-    width: 300px;
-    height: 300px;
+    width: 260px;
+    height: 260px;
     object-fit: contain;
     filter: var(--coin-glow);
     animation: coinElevate 4s ease-in-out infinite;
     transition: all 0.3s ease;
+    
+    @media (max-width: 768px) {
+      width: 200px;
+      height: 200px;
+    }
+    
+    @media (max-width: 600px) {
+      width: 220px;
+      height: 220px;
+    }
+  }
+}
+
+.secondary-coin {
+  position: relative;
+  z-index: 10;
+  
+  .giant-coin-secondary {
+    width: 300px;
+    height: 300px;
+    object-fit: contain;
+    filter: var(--coin-glow-intense);
+    animation: coinElevateReverse 4.5s ease-in-out infinite;
+    transition: all 0.3s ease;
+    
+    @media (max-width: 768px) {
+      width: 230px;
+      height: 230px;
+    }
+    
+    @media (max-width: 600px) {
+      width: 250px;
+      height: 250px;
+    }
   }
 }
 
@@ -540,19 +621,90 @@
   animation: glowRingPulse 3s ease-in-out infinite;
   
   &:first-of-type {
-    width: 320px;
-    height: 320px;
+    width: 280px;
+    height: 280px;
+    
+    @media (max-width: 768px) {
+      width: 220px;
+      height: 220px;
+    }
+    
+    @media (max-width: 600px) {
+      width: 240px;
+      height: 240px;
+    }
   }
   
   &--2 {
-    width: 360px;
-    height: 360px;
+    width: 310px;
+    height: 310px;
     animation-delay: -1.5s;
     opacity: 0.2;
+    
+    @media (max-width: 768px) {
+      width: 240px;
+      height: 240px;
+    }
+    
+    @media (max-width: 600px) {
+      width: 270px;
+      height: 270px;
+    }
+  }
+}
+
+.coin-glow-ring-secondary {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--robo-gold-secondary);
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: glowRingPulseReverse 3.5s ease-in-out infinite;
+  
+  &:first-of-type {
+    width: 320px;
+    height: 320px;
+    
+    @media (max-width: 768px) {
+      width: 250px;
+      height: 250px;
+    }
+    
+    @media (max-width: 600px) {
+      width: 270px;
+      height: 270px;
+    }
+  }
+  
+  &--2 {
+    width: 350px;
+    height: 350px;
+    animation-delay: -1.8s;
+    opacity: 0.25;
+    
+    @media (max-width: 768px) {
+      width: 270px;
+      height: 270px;
+    }
+    
+    @media (max-width: 600px) {
+      width: 300px;
+      height: 300px;
+    }
   }
 }
 
 .coin-platform {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.coin-platform-secondary {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -572,6 +724,13 @@
     height: 350px;
     top: -175px;
     left: -175px;
+    
+    @media (max-width: 768px) {
+      width: 260px;
+      height: 260px;
+      top: -130px;
+      left: -130px;
+    }
   }
   
   &--2 {
@@ -581,6 +740,13 @@
     left: -190px;
     animation-direction: reverse;
     animation-duration: 25s;
+    
+    @media (max-width: 768px) {
+      width: 285px;
+      height: 285px;
+      top: -142px;
+      left: -142px;
+    }
   }
   
   &--3 {
@@ -589,6 +755,66 @@
     top: -210px;
     left: -210px;
     animation-duration: 30s;
+    
+    @media (max-width: 768px) {
+      width: 315px;
+      height: 315px;
+      top: -157px;
+      left: -157px;
+    }
+  }
+}
+
+.platform-ring-secondary {
+  position: absolute;
+  border: 1px solid var(--robo-gold-secondary);
+  border-radius: 50%;
+  opacity: 0.12;
+  animation: platformRotateReverse 22s linear infinite;
+  
+  &--1 {
+    width: 390px;
+    height: 390px;
+    top: -195px;
+    left: -195px;
+    
+    @media (max-width: 768px) {
+      width: 290px;
+      height: 290px;
+      top: -145px;
+      left: -145px;
+    }
+  }
+  
+  &--2 {
+    width: 420px;
+    height: 420px;
+    top: -210px;
+    left: -210px;
+    animation-direction: reverse;
+    animation-duration: 28s;
+    
+    @media (max-width: 768px) {
+      width: 315px;
+      height: 315px;
+      top: -157px;
+      left: -157px;
+    }
+  }
+  
+  &--3 {
+    width: 460px;
+    height: 460px;
+    top: -230px;
+    left: -230px;
+    animation-duration: 33s;
+    
+    @media (max-width: 768px) {
+      width: 345px;
+      height: 345px;
+      top: -172px;
+      left: -172px;
+    }
   }
 }
 
@@ -693,4 +919,32 @@
     left: 70%;
     animation: dataStream3 3.5s ease-in-out infinite;
   }
+}
+
+// Reverse animations for secondary coin
+@keyframes coinElevateReverse {
+  0%, 100% {
+    transform: translateY(-10px);
+    filter: drop-shadow(0 20px 30px rgba(253, 224, 71, 0.4));
+  }
+  50% {
+    transform: translateY(5px);
+    filter: drop-shadow(0 5px 15px rgba(253, 224, 71, 0.7));
+  }
+}
+
+@keyframes glowRingPulseReverse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes platformRotateReverse {
+  0% { transform: translate(-50%, -50%) rotate(360deg); }
+  100% { transform: translate(-50%, -50%) rotate(0deg); }
 }
