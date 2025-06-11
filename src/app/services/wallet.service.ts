@@ -11,10 +11,28 @@ import {
   METAMASK_DOWNLOAD_URL,
   MetaMaskErrorCode,
   MetaMaskMethod,
-  MetaMaskEvent
+  MetaMaskEvent,
+  SUPPORTED_TOKENS,
+  SupportedToken,
+  ERC20_BALANCE_ABI,
+  MULTI_CHAIN_RPC_ENDPOINTS
 } from '../models/web3.interface';
 import { NotificationService } from './notification.service';
 import { PriceService } from './price.service';
+
+// Token balance interface
+interface TokenBalance {
+  symbol: string;
+  balance: string;
+  balanceUSD: number;
+  lastUpdated: number;
+}
+
+// Type for any supported token from any chain
+type AnyChainToken = typeof SUPPORTED_TOKENS[56]['bnb'] | typeof SUPPORTED_TOKENS[56]['eth'] | typeof SUPPORTED_TOKENS[56]['usdt'] | typeof SUPPORTED_TOKENS[1]['eth'] | typeof SUPPORTED_TOKENS[1]['usdt'] | typeof SUPPORTED_TOKENS[1]['bnb'];
+
+// Type for any chain tokens object  
+type AnyChainTokens = typeof SUPPORTED_TOKENS[56] | typeof SUPPORTED_TOKENS[1];
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +49,10 @@ export class WalletService {
     chainId: BSC_MAINNET_CHAIN_ID,
     balance: '0'
   });
+
+  // Multi-token balance tracking
+  private readonly tokenBalances = signal<Map<string, TokenBalance>>(new Map());
+  private readonly _isUpdatingBalances = signal<boolean>(false);
 
   // Modal and UI state
   private readonly modalOpen = signal<boolean>(false);
@@ -81,20 +103,58 @@ export class WalletService {
     return balance ? `${parseFloat(balance).toFixed(4)} BNB` : '0.0000 BNB';
   });
 
-  // NEW: Portfolio calculation computed signals
+  // Multi-token balance computed signals
   readonly bnbBalance = computed(() => parseFloat(this.balance() || '0'));
   
-  readonly portfolioValueUSD = computed(() => {
+  readonly ethBalance = computed(() => {
+    const ethToken = this.tokenBalances().get('ETH');
+    return ethToken ? parseFloat(ethToken.balance) : 0;
+  });
+
+  readonly usdtBalance = computed(() => {
+    const usdtToken = this.tokenBalances().get('USDT');
+    return usdtToken ? parseFloat(usdtToken.balance) : 0;
+  });
+
+  // Individual token USD values
+  readonly bnbBalanceUSD = computed(() => {
     const bnbAmount = this.bnbBalance();
     if (bnbAmount === 0) return 0;
-    
     return this.priceService.calculateUSDValue('bnb', bnbAmount);
+  });
+
+  readonly ethBalanceUSD = computed(() => {
+    const ethAmount = this.ethBalance();
+    if (ethAmount === 0) return 0;
+    return this.priceService.calculateUSDValue('eth', ethAmount);
+  });
+
+  readonly usdtBalanceUSD = computed(() => {
+    const usdtAmount = this.usdtBalance();
+    if (usdtAmount === 0) return 0;
+    return this.priceService.calculateUSDValue('usdt', usdtAmount);
+  });
+
+  // Total portfolio value (BNB + ETH + USDT only)
+  readonly portfolioValueUSD = computed(() => {
+    const bnbUSD = this.bnbBalanceUSD();
+    const ethUSD = this.ethBalanceUSD();
+    const usdtUSD = this.usdtBalanceUSD();
+    
+    const total = bnbUSD + ethUSD + usdtUSD;
+    console.log(`💰 Portfolio Breakdown: BNB: $${bnbUSD.toFixed(2)}, ETH: $${ethUSD.toFixed(2)}, USDT: $${usdtUSD.toFixed(2)}, Total: $${total.toFixed(2)}`);
+    
+    return total;
   });
 
   readonly portfolioDisplay = computed(() => {
     const usdValue = this.portfolioValueUSD();
     return this.priceService.formatUSDValue(usdValue);
   });
+
+  // Individual token balances for debugging/display
+  readonly tokenBalanceMap = computed(() => this.tokenBalances());
+  readonly isUpdatingBalances = computed(() => this._isUpdatingBalances());
 
   readonly networkName = computed(() => {
     const chainId = this.chainId();
@@ -273,86 +333,104 @@ export class WalletService {
   }
 
   // Main connection method with comprehensive debugging
-  async connectWallet(walletId?: string): Promise<void> {
-    console.log('🔌 WalletService: Connect wallet called with ID:', walletId);
+  async connectWallet(): Promise<ConnectionResult | null>;
+  async connectWallet(walletId: string): Promise<void>;
+  async connectWallet(walletId?: string): Promise<ConnectionResult | null | void> {
+    // Handle the modal-style connection with walletId
+    if (walletId !== undefined) {
+      console.log('🔌 WalletService: Connect wallet called with ID:', walletId);
 
-    if (!walletId) {
-      console.log('📱 WalletService: No wallet ID provided, showing modal');
-      this.showModal();
+      if (walletId !== 'metamask') {
+        console.log('🚨 WalletService: Unsupported wallet:', walletId);
+        this.notificationService.showError('Only MetaMask is supported currently');
+        return;
+      }
+
+      if (!this.isMetaMaskInstalled()) {
+        console.log('🚨 WalletService: MetaMask not installed');
+        this.notificationService.showError('MetaMask is not installed');
+        return;
+      }
+
+      // Call the main connection method and handle success/error
+      const result = await this.connectWallet();
+      if (result) {
+        this.closeModal();
+      }
       return;
     }
 
-    if (walletId !== 'metamask') {
-      console.log('🚨 WalletService: Unsupported wallet:', walletId);
-      this.notificationService.showError('Only MetaMask is supported currently');
-      return;
+    // Main connection logic
+    if (!this.ethereum) {
+      console.warn('🚨 WalletService: MetaMask not detected');
+      this.notificationService.showError('MetaMask not detected. Please install MetaMask.');
+      return null;
     }
 
-    if (!this.isMetaMaskInstalled()) {
-      console.log('🚨 WalletService: MetaMask not installed');
-      this.notificationService.showError('MetaMask is not installed');
-      return;
-    }
-
-    console.log('🦊 WalletService: Starting MetaMask connection...');
-    this._connectingWalletId.set(walletId);
     this.walletState.update(state => ({ ...state, status: 'connecting' }));
+    console.log('🔌 WalletService: Connecting to MetaMask...');
 
     try {
-      console.log('📝 WalletService: Requesting accounts...');
-      
       // Request account access
-      const accounts = await this.ethereum!.request({
+      const accounts = await this.ethereum.request({
         method: MetaMaskMethod.REQUEST_ACCOUNTS
       });
 
-      console.log('👤 WalletService: Accounts received:', accounts);
-
-      if (!accounts || accounts.length === 0) {
+      if (!accounts?.length) {
         throw new Error('No accounts returned from MetaMask');
       }
 
       const address = accounts[0];
-      console.log('📍 WalletService: Selected address:', address);
+      console.log('✅ WalletService: Connected to address:', address);
 
-      // Get current chain ID
-      const chainId = await this.ethereum!.request({
+      // Get chain ID
+      const chainId = await this.ethereum.request({
         method: MetaMaskMethod.GET_CHAIN_ID
       });
-      const chainIdDecimal = parseInt(chainId, 16);
-      console.log('🌐 WalletService: Current chain ID:', chainIdDecimal);
+      const numericChainId = parseInt(chainId, 16);
+      console.log('🌐 WalletService: Connected to chain:', numericChainId);
 
-      // Check if we're on BSC network
-      if (chainIdDecimal !== BSC_MAINNET_CHAIN_ID) {
-        console.log('🔄 WalletService: Wrong network, switching to BSC...');
-        await this.switchToBSCNetwork();
-        return; // switchToBSCNetwork will handle the rest
-      }
-
+      // Get network info
+      const networkName = SUPPORTED_NETWORKS[numericChainId]?.chainName || `Chain ${numericChainId}`;
+      
       // Update wallet state
       this.walletState.set({
-        status: 'connected',
         address,
-        chainId: chainIdDecimal,
-        balance: '0'
+        chainId: numericChainId,
+        balance: '0', // Will be updated by updateBalance
+        network: networkName,
+        status: 'connected'
       });
 
-      console.log('✅ WalletService: Wallet state updated');
+      console.log('💰 WalletService: Fetching initial balance...');
+      
+      // Fetch initial balance
+      await this.updateBalance();
 
-      // Fetch balance
-      await this.fetchBalanceOnConnection();
+      const result: ConnectionResult = {
+        address,
+        chainId: numericChainId,
+        balance: this.balance(),
+        network: networkName
+      };
 
-      // Success notifications
-      this.notificationService.showSuccess(
-        `Connected to MetaMask: ${address.slice(0, 6)}...${address.slice(-4)}`
-      );
-
-      console.log('✅ WalletService: MetaMask connection successful!');
-      this.closeModal();
+      console.log('🎉 WalletService: Connection successful!', result);
+      console.log('💰 WalletService: Portfolio display:', this.portfolioDisplay());
+      
+      this.notificationService.showSuccess('Wallet connected successfully!');
+      return result;
 
     } catch (error: any) {
-      console.error('🚨 WalletService: MetaMask connection failed:', error);
-      this.handleConnectionError(error);
+      console.error('🚨 WalletService: Connection failed:', error);
+      
+      if (error.code === MetaMaskErrorCode.USER_REJECTED) {
+        this.notificationService.showError('Connection rejected by user');
+      } else {
+        this.notificationService.showError(`Failed to connect: ${error.message}`);
+      }
+      
+      this.walletState.update(state => ({ ...state, status: 'error' }));
+      return null;
     }
   }
 
@@ -397,62 +475,307 @@ export class WalletService {
     }
   }
 
-  // Balance management with enhanced debugging
+  // Enhanced balance update to include all supported tokens from ALL networks
   async updateBalance(): Promise<void> {
-    console.log('💰 WalletService: Starting balance update...');
-    console.log('💰 WalletService: Ethereum available:', !!this.ethereum);
-    console.log('💰 WalletService: Address available:', this.address());
-    console.log('💰 WalletService: Is connected:', this.isConnected());
-    console.log('💰 WalletService: Is correct network:', this.isCorrectNetwork());
-    
-    if (!this.ethereum) {
-      console.error('🚨 WalletService: No ethereum provider');
+    if (!this.ethereum || !this.address()) {
+      console.warn('🚨 WalletService: Cannot update balance - no ethereum or address');
       return;
     }
 
-    if (!this.isConnected()) {
-      console.error('🚨 WalletService: Wallet not connected');
-      return;
-    }
-
-    if (!this.isCorrectNetwork()) {
-      console.error('🚨 WalletService: Wrong network');
-      return;
-    }
-
-    console.log('💰 WalletService: All conditions met, proceeding with balance update...');
+    console.log('💰 WalletService: Updating MULTI-CHAIN balances...');
     this._isRefreshingBalance.set(true);
+    this._isUpdatingBalances.set(true);
 
     try {
       const address = this.address();
-      console.log('📍 WalletService: Getting balance for:', address);
-      console.log('💰 WalletService: Requesting balance from blockchain...');
+      console.log('📍 WalletService: Getting balances for:', address, 'across ALL supported networks');
+
+      // Fetch balances from ALL supported networks simultaneously
+      const networkPromises = Object.entries(SUPPORTED_TOKENS).map(([chainIdStr, chainTokens]) => 
+        this.fetchNetworkBalances(address, parseInt(chainIdStr), chainTokens)
+      );
+
+      const networkResults = await Promise.allSettled(networkPromises);
       
-      const balanceWei = await this.ethereum.request({
-        method: MetaMaskMethod.GET_BALANCE,
-        params: [address, 'latest']
+      // Aggregate results from all networks
+      const allTokenBalances = new Map<string, TokenBalance>();
+      let currentNetworkNativeBalance = '0';
+
+      networkResults.forEach((result, index) => {
+        const chainId = parseInt(Object.keys(SUPPORTED_TOKENS)[index]);
+        const currentChainId = this.chainId();
+
+        if (result.status === 'fulfilled') {
+          const { tokenBalances, nativeBalance } = result.value;
+          
+          // If this is the current network, update the native balance for wallet state
+          if (chainId === currentChainId) {
+            currentNetworkNativeBalance = nativeBalance;
+          }
+
+          // Merge token balances - for duplicate symbols, sum the USD values
+          tokenBalances.forEach((balance, symbol) => {
+            const existing = allTokenBalances.get(symbol);
+            if (existing) {
+              // Sum USD values for same token across networks
+              allTokenBalances.set(symbol, {
+                symbol: balance.symbol,
+                balance: `${parseFloat(existing.balance) + parseFloat(balance.balance)}`, // Sum raw amounts
+                balanceUSD: existing.balanceUSD + balance.balanceUSD, // Sum USD values
+                lastUpdated: Math.max(existing.lastUpdated, balance.lastUpdated)
+              });
+            } else {
+              allTokenBalances.set(symbol, balance);
+            }
+          });
+
+          console.log(`✅ Chain ${chainId} balances fetched successfully`);
+        } else {
+          console.error(`🚨 Failed to fetch balances from chain ${chainId}:`, result.reason);
+        }
       });
 
-      console.log('💰 WalletService: Raw balance (hex):', balanceWei);
-
-      // Convert from Wei to BNB
-      const balanceEth = this.weiToBNB(balanceWei);
-      console.log('💰 WalletService: Converted balance (BNB):', balanceEth);
-      
+      // Update signals with aggregated multi-chain balances
+      this.tokenBalances.set(allTokenBalances);
       this.walletState.update(state => ({
         ...state,
-        balance: balanceEth
+        balance: currentNetworkNativeBalance
       }));
 
-      console.log('✅ WalletService: Balance updated successfully');
-      console.log('💰 WalletService: Current balance signal value:', this.balance());
+      console.log('✅ WalletService: Multi-chain token balances updated successfully');
+      console.log('💰 WalletService: Total portfolio value:', this.portfolioDisplay());
+
+      // Log breakdown
+      allTokenBalances.forEach((balance, symbol) => {
+        console.log(`💰 ${symbol}: ${balance.balance} (${this.priceService.formatUSDValue(balance.balanceUSD)})`);
+      });
 
     } catch (error) {
-      console.error('🚨 WalletService: Error updating balance:', error);
-      this.notificationService.showError('Failed to update balance');
+      console.error('🚨 WalletService: Error updating multi-chain balances:', error);
+      this.notificationService.showError('Failed to update balances');
     } finally {
       this._isRefreshingBalance.set(false);
+      this._isUpdatingBalances.set(false);
     }
+  }
+
+  // Fetch balances from a specific network using direct RPC calls
+  private async fetchNetworkBalances(
+    address: string, 
+    chainId: number, 
+    chainTokens: AnyChainTokens
+  ): Promise<{ tokenBalances: Map<string, TokenBalance>, nativeBalance: string }> {
+    console.log(`🌐 Fetching balances from chain ${chainId}...`);
+    
+    const tokenBalances = new Map<string, TokenBalance>();
+    let nativeBalance = '0';
+
+    try {
+      // Fetch all token balances for this network in parallel
+      const balancePromises = Object.entries(chainTokens).map(([key, token]) => 
+        this.fetchTokenBalanceFromNetwork(address, token, chainId)
+      );
+
+      const balanceResults = await Promise.allSettled(balancePromises);
+      
+      balanceResults.forEach((result, index) => {
+        const token = Object.values(chainTokens)[index];
+
+        if (result.status === 'fulfilled') {
+          const balance = result.value;
+          
+          if (token.isNative) {
+            nativeBalance = balance;
+          }
+
+          // Calculate USD value
+          const balanceNum = parseFloat(balance);
+          const usdValue = this.priceService.calculateUSDValue(token.symbol.toLowerCase(), balanceNum);
+
+          if (balanceNum > 0) { // Only log non-zero balances
+            console.log(`💰 Chain ${chainId} - ${token.symbol}: ${balance} (${this.priceService.formatUSDValue(usdValue)})`);
+          }
+
+          tokenBalances.set(token.symbol, {
+            symbol: token.symbol,
+            balance: balance,
+            balanceUSD: usdValue,
+            lastUpdated: Date.now()
+          });
+
+        } else {
+          console.error(`🚨 Failed to fetch ${token.symbol} balance from chain ${chainId}:`, result.reason);
+          
+          // Set zero balance for failed tokens
+          tokenBalances.set(token.symbol, {
+            symbol: token.symbol,
+            balance: '0',
+            balanceUSD: 0,
+            lastUpdated: Date.now()
+          });
+        }
+      });
+
+      return { tokenBalances, nativeBalance };
+
+    } catch (error) {
+      console.error(`🚨 Error fetching balances from chain ${chainId}:`, error);
+      return { tokenBalances, nativeBalance };
+    }
+  }
+
+  // Fetch token balance from specific network using direct RPC call
+  private async fetchTokenBalanceFromNetwork(
+    address: string, 
+    token: AnyChainToken, 
+    chainId: number
+  ): Promise<string> {
+    try {
+      if (token.isNative) {
+        // For native tokens, we need to use the current connection if it's the same network
+        if (chainId === this.chainId()) {
+          const balanceWei = await this.ethereum!.request({
+            method: MetaMaskMethod.GET_BALANCE,
+            params: [address, 'latest']
+          });
+          return this.weiToEther(balanceWei);
+        } else {
+          // For different networks, use direct RPC call
+          return await this.fetchNativeBalanceViaRPC(address, chainId);
+        }
+      } else {
+        // For ERC-20 tokens, use direct RPC call
+        return await this.fetchERC20BalanceViaRPC(address, token.address!, token.decimals, chainId);
+      }
+    } catch (error) {
+      console.error(`🚨 Error fetching ${token.symbol} from chain ${chainId}:`, error);
+      return '0';
+    }
+  }
+
+  // Fetch native balance via direct RPC call
+  private async fetchNativeBalanceViaRPC(address: string, chainId: number): Promise<string> {
+    try {
+      const rpcUrl = MULTI_CHAIN_RPC_ENDPOINTS[chainId as keyof typeof MULTI_CHAIN_RPC_ENDPOINTS];
+      if (!rpcUrl) {
+        throw new Error(`No RPC endpoint for chain ${chainId}`);
+      }
+
+      const response = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_getBalance',
+          params: [address, 'latest'],
+          id: 1
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      return this.weiToEther(data.result);
+    } catch (error) {
+      console.error(`🚨 Error fetching native balance via RPC for chain ${chainId}:`, error);
+      return '0';
+    }
+  }
+
+  // Fetch ERC-20 balance via direct RPC call
+  private async fetchERC20BalanceViaRPC(
+    userAddress: string, 
+    tokenAddress: string, 
+    decimals: number, 
+    chainId: number
+  ): Promise<string> {
+    try {
+      const rpcUrl = MULTI_CHAIN_RPC_ENDPOINTS[chainId as keyof typeof MULTI_CHAIN_RPC_ENDPOINTS];
+      if (!rpcUrl) {
+        throw new Error(`No RPC endpoint for chain ${chainId}`);
+      }
+
+      // Encode the balanceOf function call
+      const balanceOfSignature = '0x70a08231'; // balanceOf(address) function signature
+      const paddedAddress = userAddress.slice(2).padStart(64, '0'); // Remove 0x and pad to 64 chars
+      const data = balanceOfSignature + paddedAddress;
+
+      const response = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_call',
+          params: [
+            {
+              to: tokenAddress,
+              data: data
+            },
+            'latest'
+          ],
+          id: 1
+        })
+      });
+
+      const responseData = await response.json();
+      if (responseData.error) {
+        throw new Error(responseData.error.message);
+      }
+
+      // Convert hex result to decimal and then to readable format
+      const balanceWei = BigInt(responseData.result);
+      const balance = this.weiToToken(balanceWei.toString(16), decimals);
+      
+      return balance;
+    } catch (error) {
+      console.error(`🚨 Error fetching ERC-20 balance via RPC for chain ${chainId}:`, error);
+      return '0';
+    }
+  }
+
+  // Convert Wei to token with custom decimals
+  private weiToToken(weiHex: string, decimals: number): string {
+    try {
+      // Remove 0x prefix if present
+      const cleanHex = weiHex.startsWith('0x') ? weiHex.slice(2) : weiHex;
+      
+      // Convert hex to BigInt
+      const weiBigInt = BigInt('0x' + cleanHex);
+      
+      // Convert to decimal string
+      const weiStr = weiBigInt.toString();
+      
+      // Handle cases where the number is less than decimals digits
+      if (weiStr.length <= decimals) {
+        const padded = weiStr.padStart(decimals, '0');
+        const beforeDecimal = '0';
+        const afterDecimal = padded.slice(0, decimals);
+        return beforeDecimal + '.' + afterDecimal.replace(/0+$/, '') || '0';
+      } else {
+        const beforeDecimal = weiStr.slice(0, -decimals);
+        const afterDecimal = weiStr.slice(-decimals);
+        return beforeDecimal + '.' + afterDecimal.replace(/0+$/, '') || '0';
+      }
+    } catch (error) {
+      console.error('🚨 Error converting Wei to token:', error);
+      return '0';
+    }
+  }
+
+  // Generic Wei to Ether conversion (18 decimals) - for native tokens
+  private weiToEther(weiHex: string): string {
+    return this.weiToToken(weiHex, 18);
+  }
+
+  // For compatibility with existing code
+  private weiToBNB(weiHex: string): string {
+    return this.weiToEther(weiHex);
   }
 
   // PUBLIC method for manual debugging - can be called from browser console
@@ -530,14 +853,14 @@ export class WalletService {
     }
   }
 
-  // Public method for refreshing portfolio (used by header component)
+  // Enhanced refresh portfolio method
   async refreshPortfolio(): Promise<void> {
     console.log('🔄 WalletService: Manual portfolio refresh requested...');
     
     // Refresh prices first
     await this.priceService.fetchTokenPrices();
     
-    // Then update balance
+    // Then update all token balances
     if (this.isConnected()) {
       await this.updateBalance();
     }
@@ -651,34 +974,74 @@ export class WalletService {
     }
   }
 
-  // Enhanced wei to BNB conversion with debugging
-  private weiToBNB(wei: string): string {
-    console.log('🔄 WalletService: Converting wei to BNB...');
-    console.log('🔄 WalletService: Input wei:', wei);
-    
-    try {
-      // Remove 0x prefix if present
-      const cleanWei = wei.startsWith('0x') ? wei.slice(2) : wei;
-      console.log('🔄 WalletService: Clean wei (no 0x):', cleanWei);
-      
-      // Convert hex to decimal using BigInt to handle large numbers
-      const weiDecimal = BigInt('0x' + cleanWei);
-      console.log('🔄 WalletService: Wei as decimal:', weiDecimal.toString());
-      
-      // Convert to BNB (1 BNB = 10^18 wei)
-      const bnbValue = Number(weiDecimal) / Math.pow(10, 18);
-      console.log('🔄 WalletService: Final BNB value:', bnbValue);
-      
-      return bnbValue.toFixed(6);
-    } catch (error) {
-      console.error('🚨 WalletService: Error converting wei to BNB:', error);
-      return '0';
-    }
-  }
-
   // For compatibility with existing code
   updateWalletState(updates: Partial<WalletState>): void {
     console.log('🔄 WalletService: Updating wallet state:', updates);
     this.walletState.update(state => ({ ...state, ...updates }));
+  }
+
+  // Testing utility: Set mock token balances for demonstration
+  setMockTokenBalances(): void {
+    console.log('🎭 WalletService: Setting mock token balances for testing...');
+    
+    const mockBalances = new Map<string, TokenBalance>();
+    
+    // Example: User has $100 ETH, $350 BNB, $0 USDT
+    mockBalances.set('BNB', {
+      symbol: 'BNB',
+      balance: '0.5432', // ~$350 at ~$645/BNB
+      balanceUSD: 350,
+      lastUpdated: Date.now()
+    });
+    
+    mockBalances.set('ETH', {
+      symbol: 'ETH',
+      balance: '0.0407', // ~$100 at ~$2456/ETH  
+      balanceUSD: 100,
+      lastUpdated: Date.now()
+    });
+    
+    mockBalances.set('USDT', {
+      symbol: 'USDT',
+      balance: '0', // $0 USDT
+      balanceUSD: 0,
+      lastUpdated: Date.now()
+    });
+    
+    this.tokenBalances.set(mockBalances);
+    
+    // Update BNB balance in wallet state
+    this.walletState.update(state => ({
+      ...state,
+      balance: '0.5432'
+    }));
+    
+    console.log('✅ Mock balances set: Total portfolio should show $450 (BNB + ETH + USDT)');
+    console.log('💰 Portfolio value:', this.portfolioDisplay());
+  }
+
+  // For testing: Force update balance and log details
+  async testMultiChainBalance(): Promise<void> {
+    console.log('🧪 WalletService: Testing multi-chain balance...');
+    console.log('🔗 Current chain ID:', this.chainId());
+    console.log('🏠 Current address:', this.address());
+    
+    if (!this.isConnected()) {
+      console.log('❌ Wallet not connected');
+      return;
+    }
+
+    await this.updateBalance();
+    
+    console.log('📊 Balance results:');
+    console.log('- Portfolio Display:', this.portfolioDisplay());
+    console.log('- Portfolio USD Value:', this.portfolioValueUSD());
+    console.log('- Token Balances:', Array.from(this.tokenBalances().entries()));
+    
+    // Log individual token balances
+    const tokens = this.tokenBalances();
+    tokens.forEach((balance, symbol) => {
+      console.log(`  ${symbol}: ${balance.balance} ($${balance.balanceUSD.toFixed(2)})`);
+    });
   }
 } 
