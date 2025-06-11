@@ -125,6 +125,10 @@ export class WalletService {
     
     // Start price updates for portfolio calculation
     this.priceService.startPriceUpdates();
+    
+    // Add to global window for debugging
+    (window as any).walletService = this;
+    console.log('🔧 WalletService: Added to window.walletService for debugging');
   }
 
   // Initialize MetaMask provider with enhanced debugging
@@ -398,13 +402,25 @@ export class WalletService {
     console.log('💰 WalletService: Starting balance update...');
     console.log('💰 WalletService: Ethereum available:', !!this.ethereum);
     console.log('💰 WalletService: Address available:', this.address());
+    console.log('💰 WalletService: Is connected:', this.isConnected());
+    console.log('💰 WalletService: Is correct network:', this.isCorrectNetwork());
     
-    if (!this.ethereum || !this.isConnected() || !this.isCorrectNetwork()) {
-      console.log('ℹ️ WalletService: Cannot update balance - conditions not met');
+    if (!this.ethereum) {
+      console.error('🚨 WalletService: No ethereum provider');
       return;
     }
 
-    console.log('💰 WalletService: Updating balance...');
+    if (!this.isConnected()) {
+      console.error('🚨 WalletService: Wallet not connected');
+      return;
+    }
+
+    if (!this.isCorrectNetwork()) {
+      console.error('🚨 WalletService: Wrong network');
+      return;
+    }
+
+    console.log('💰 WalletService: All conditions met, proceeding with balance update...');
     this._isRefreshingBalance.set(true);
 
     try {
@@ -436,6 +452,53 @@ export class WalletService {
       this.notificationService.showError('Failed to update balance');
     } finally {
       this._isRefreshingBalance.set(false);
+    }
+  }
+
+  // PUBLIC method for manual debugging - can be called from browser console
+  async debugBalance(): Promise<void> {
+    console.log('🔧 DEBUG: Manual balance check started...');
+    console.log('🔧 DEBUG: Ethereum provider:', !!this.ethereum);
+    console.log('🔧 DEBUG: Wallet connected:', this.isConnected());
+    console.log('🔧 DEBUG: Address:', this.address());
+    console.log('🔧 DEBUG: Chain ID:', this.chainId());
+    console.log('🔧 DEBUG: Is BSC network:', this.isCorrectNetwork());
+    console.log('🔧 DEBUG: Current balance signal:', this.balance());
+
+    if (!this.ethereum) {
+      console.error('🔧 DEBUG: No ethereum provider available');
+      return;
+    }
+
+    try {
+      // Direct balance check without conditions
+      const address = this.address();
+      if (!address) {
+        console.error('🔧 DEBUG: No address available');
+        return;
+      }
+
+      console.log('🔧 DEBUG: Making direct eth_getBalance call...');
+      const balanceWei = await this.ethereum.request({
+        method: 'eth_getBalance',
+        params: [address, 'latest']
+      });
+
+      console.log('🔧 DEBUG: Raw response:', balanceWei);
+      
+      const balanceBNB = this.weiToBNB(balanceWei);
+      console.log('🔧 DEBUG: Converted balance:', balanceBNB);
+
+      // Force update state
+      this.walletState.update(state => ({
+        ...state,
+        balance: balanceBNB
+      }));
+
+      console.log('🔧 DEBUG: Updated balance signal:', this.balance());
+
+    } catch (error) {
+      console.error('🔧 DEBUG: Direct balance check failed:', error);
     }
   }
 
