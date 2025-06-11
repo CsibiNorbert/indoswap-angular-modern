@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LivePriceService } from '../../services/live-price.service';
 
@@ -6,6 +6,7 @@ import { LivePriceService } from '../../services/live-price.service';
   selector: 'app-demo-banner',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isLiveMode()) {
       <div class="demo-banner real-time">
@@ -19,7 +20,7 @@ import { LivePriceService } from '../../services/live-price.service';
           </div>
           <div class="demo-banner__status">
             <div class="status-indicator"></div>
-            <span>{{ formatLastUpdate() }}</span>
+            <span>{{ lastUpdateDisplay() }}</span>
           </div>
         </div>
       </div>
@@ -44,16 +45,18 @@ import { LivePriceService } from '../../services/live-price.service';
   `,
   styleUrl: './demo-banner.component.scss'
 })
-export class DemoBannerComponent {
+export class DemoBannerComponent implements OnDestroy {
   protected readonly priceService = inject(LivePriceService);
+  
+  // Internal signal for controlled time updates
+  private readonly timeUpdateSignal = signal<number>(Date.now());
+  private updateInterval?: number;
 
-  protected isLiveMode(): boolean {
-    const source = this.priceService.getPriceSource();
-    return source.includes('Live Prices');
-  }
-
-  protected formatLastUpdate(): string {
+  // Computed signal for last update display - updates every 10 seconds  
+  protected readonly lastUpdateDisplay = computed(() => {
     const lastUpdate = this.priceService.lastUpdate();
+    this.timeUpdateSignal(); // Subscribe to time updates
+    
     if (!lastUpdate) return 'Never updated';
     
     const now = Date.now();
@@ -61,7 +64,27 @@ export class DemoBannerComponent {
     const minutes = Math.floor(diff / 60000);
     const seconds = Math.floor((diff % 60000) / 1000);
     
-    if (minutes > 0) return `${minutes}m ${seconds}s ago`;
-    return `${seconds}s ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    if (seconds < 5) return 'Just now';
+    if (seconds < 30) return `${Math.floor(seconds / 10) * 10}s ago`;
+    return `${Math.floor(seconds / 10) * 10}s ago`;
+  });
+
+  constructor() {
+    // Update time signal every 10 seconds to control the frequency
+    this.updateInterval = window.setInterval(() => {
+      this.timeUpdateSignal.set(Date.now());
+    }, 10000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+    }
+  }
+
+  protected isLiveMode(): boolean {
+    const source = this.priceService.getPriceSource();
+    return source.includes('Live Prices');
   }
 } 

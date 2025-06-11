@@ -2,6 +2,7 @@ import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
+import { PriceService } from '../../services/price.service';
 
 @Component({
   selector: 'app-header',
@@ -44,22 +45,24 @@ import { NotificationService } from '../../services/notification.service';
         <div class="wallet-section">
           <!-- Connected State -->
           <div class="wallet-connected" *ngIf="isConnected()">
-            <!-- Balance -->
+            <!-- Portfolio Balance -->
             <div class="balance-section">
-              <span class="balance-amount">{{ getBalanceDisplay() }}</span>
+              <span class="balance-amount" [title]="getBalanceTooltip()">{{ portfolioDisplay() }}</span>
               <button 
                 type="button"
                 class="refresh-btn"
                 (click)="onRefreshBalance()"
-                title="Refresh balance">
-                🔄
+                [disabled]="isRefreshingBalance()"
+                title="Refresh multi-chain portfolio balance">
+                <span *ngIf="isRefreshingBalance()" class="spinner">⟳</span>
+                <span *ngIf="!isRefreshingBalance()">🔄</span>
               </button>
             </div>
 
             <!-- Network -->
-            <div class="network-section" [class.correct-network]="isCorrectNetwork()">
-              <span class="network-dot">{{ isCorrectNetwork() ? '🟢' : '🔴' }}</span>
-              <span class="network-name">{{ getNetworkName() }}</span>
+            <div class="network-section">
+              <span class="network-dot">🌐</span>
+              <span class="network-name">{{ portfolioLabel() }}</span>
             </div>
 
             <!-- Address & Disconnect -->
@@ -176,7 +179,8 @@ import { NotificationService } from '../../services/notification.service';
       color: #FFD700;
       font-size: 0.9rem;
       font-family: 'Courier New', monospace;
-      min-width: 60px;
+      min-width: 70px;
+      cursor: help;
     }
 
     .refresh-btn {
@@ -188,11 +192,28 @@ import { NotificationService } from '../../services/notification.service';
       border-radius: 4px;
       transition: all 0.3s ease;
       font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .refresh-btn:hover {
+    .refresh-btn:hover:not(:disabled) {
       color: #FFD700;
-      transform: rotate(180deg);
+      transform: scale(1.1);
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
     .network-section {
@@ -299,13 +320,22 @@ import { NotificationService } from '../../services/notification.service';
 export class HeaderComponent {
   private readonly walletService = inject(WalletService);
   private readonly notificationService = inject(NotificationService);
+  private readonly priceService = inject(PriceService);
 
   // Computed signals from wallet service
   readonly isConnected = this.walletService.isConnected;
   readonly isConnecting = this.walletService.isConnecting;
   readonly shortAddress = this.walletService.shortAddress;
-  readonly balance = this.walletService.balance; // Use BNB balance for now
+  readonly portfolioDisplay = this.walletService.portfolioDisplay;
+  readonly isRefreshingBalance = this.walletService.isRefreshingBalance;
+  readonly balance = this.walletService.balance;
   readonly isCorrectNetwork = this.walletService.isCorrectNetwork;
+  readonly isUpdatingBalances = this.walletService.isUpdatingBalances;
+  
+  // Show multi-chain portfolio label
+  readonly portfolioLabel = computed(() => {
+    return this.isConnected() ? 'Multi-Chain Portfolio' : 'Portfolio';
+  });
 
   onConnect(): void {
     this.walletService.showModal();
@@ -317,13 +347,17 @@ export class HeaderComponent {
   }
 
   async onRefreshBalance(): Promise<void> {
+    if (!this.isConnected()) {
+      this.notificationService.showError('Wallet not connected');
+      return;
+    }
+
     try {
-      console.log('🔄 Header: Refreshing balance...');
-      await this.walletService.refreshBalance();
-      this.notificationService.showSuccess('💰 Balance updated!');
+      await this.walletService.updateBalance();
+      this.notificationService.showSuccess('Portfolio refreshed!');
     } catch (error) {
-      console.error('🚨 Header: Refresh failed:', error);
-      this.notificationService.showError('Failed to refresh balance');
+      console.error('Error refreshing portfolio:', error);
+      this.notificationService.showError('Failed to refresh portfolio');
     }
   }
 
@@ -333,17 +367,24 @@ export class HeaderComponent {
   }
 
   getBalanceDisplay(): string {
-    const balanceValue = parseFloat(this.balance());
-    
-    // For debugging
-    console.log('🔍 Header: Balance value:', balanceValue, 'Raw balance:', this.balance());
-    
-    if (balanceValue === 0 || isNaN(balanceValue)) {
+    if (!this.isConnected()) {
       return '$0.00';
     }
+
+    // Use the new portfolio display that shows total USD value of BNB + ETH + USDT
+    return this.walletService.portfolioDisplay();
+  }
+
+  getBalanceTooltip(): string {
+    if (!this.isConnected()) {
+      return 'Connect wallet to see multi-chain portfolio balance';
+    }
+
+    const bnbUSD = this.walletService.bnbBalanceUSD();
+    const ethUSD = this.walletService.ethBalanceUSD();
+    const usdtUSD = this.walletService.usdtBalanceUSD();
     
-    // For now, show BNB amount - we'll add USD conversion later
-    return `${balanceValue.toFixed(4)} BNB`;
+    return `Multi-Chain Portfolio Breakdown:\n• BNB: ${this.priceService.formatUSDValue(bnbUSD)}\n• ETH: ${this.priceService.formatUSDValue(ethUSD)}\n• USDT: ${this.priceService.formatUSDValue(usdtUSD)}\n\nTotal Across All Networks: ${this.walletService.portfolioDisplay()}`;
   }
 
   getNetworkName(): string {

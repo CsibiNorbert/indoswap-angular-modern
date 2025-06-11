@@ -60,4 +60,5 @@ export interface WalletState {
   readonly address: string;
   readonly chainId: number;
   readonly balance: string;
+  readonly network?: string;
 } 

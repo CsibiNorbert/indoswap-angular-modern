@@ -39,6 +39,81 @@ export interface MetaMaskError {
   data?: any;
 }
 
+// Token configuration for multi-token balance support
+export interface SupportedToken {
+  readonly symbol: string;
+  readonly name: string;
+  readonly decimals: number;
+  readonly address: string | null; // null for native tokens (BNB, ETH)
+  readonly isNative: boolean;
+  readonly chainId: number;
+  readonly coingeckoId: string;
+}
+
+// Supported tokens for portfolio calculation - Multi-chain support
+export const SUPPORTED_TOKENS = {
+  // Binance Smart Chain (56)
+  56: {
+    bnb: {
+      symbol: 'BNB',
+      name: 'Binance Coin',
+      decimals: 18,
+      address: null, // Native BNB on BSC
+      isNative: true,
+      chainId: 56,
+      coingeckoId: 'binancecoin'
+    },
+    eth: {
+      symbol: 'ETH', 
+      name: 'Ethereum',
+      decimals: 18,
+      address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', // Wrapped ETH on BSC
+      isNative: false,
+      chainId: 56,
+      coingeckoId: 'ethereum'
+    },
+    usdt: {
+      symbol: 'USDT',
+      name: 'Tether USD',
+      decimals: 18,
+      address: '0x55d398326f99059fF775485246999027B3197955', // USDT on BSC
+      isNative: false,
+      chainId: 56,
+      coingeckoId: 'tether'
+    }
+  },
+  // Ethereum Mainnet (1)
+  1: {
+    eth: {
+      symbol: 'ETH',
+      name: 'Ethereum',
+      decimals: 18,
+      address: null, // Native ETH on Ethereum
+      isNative: true,
+      chainId: 1,
+      coingeckoId: 'ethereum'
+    },
+    usdt: {
+      symbol: 'USDT',
+      name: 'Tether USD',
+      decimals: 6, // USDT on Ethereum has 6 decimals
+      address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT on Ethereum
+      isNative: false,
+      chainId: 1,
+      coingeckoId: 'tether'
+    },
+    bnb: {
+      symbol: 'BNB',
+      name: 'Binance Coin',
+      decimals: 18,
+      address: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52', // BNB token on Ethereum
+      isNative: false,
+      chainId: 1,
+      coingeckoId: 'binancecoin'
+    }
+  }
+} as const;
+
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'wrong-network';
 
 export type SupportedChainId = 56 | 1 | 137; // BSC, Ethereum, Polygon
@@ -68,6 +143,12 @@ export const SUPPORTED_NETWORKS: Record<number, NetworkConfig> = {
   }
 };
 
+// Multi-chain RPC endpoints for direct balance fetching
+export const MULTI_CHAIN_RPC_ENDPOINTS = {
+  1: 'https://eth.llamarpc.com', // Ethereum mainnet - free public RPC
+  56: 'https://bsc-dataseed.binance.org/' // BSC mainnet
+} as const;
+
 export const BSC_MAINNET_CHAIN_ID = 56;
 export const METAMASK_DOWNLOAD_URL = 'https://metamask.io/download/';
 
@@ -89,7 +170,8 @@ export enum MetaMaskMethod {
   GET_BALANCE = 'eth_getBalance',
   SWITCH_CHAIN = 'wallet_switchEthereumChain',
   ADD_CHAIN = 'wallet_addEthereumChain',
-  WATCH_ASSET = 'wallet_watchAsset'
+  WATCH_ASSET = 'wallet_watchAsset',
+  ETH_CALL = 'eth_call'
 }
 
 // MetaMask Events
@@ -98,4 +180,22 @@ export enum MetaMaskEvent {
   CHAIN_CHANGED = 'chainChanged',
   CONNECT = 'connect',
   DISCONNECT = 'disconnect'
-} 
+}
+
+// ERC-20 ABI for balanceOf function
+export const ERC20_BALANCE_ABI = {
+  name: 'balanceOf',
+  type: 'function',
+  inputs: [
+    {
+      name: 'account',
+      type: 'address'
+    }
+  ],
+  outputs: [
+    {
+      name: '',
+      type: 'uint256'
+    }
+  ]
+}; 
