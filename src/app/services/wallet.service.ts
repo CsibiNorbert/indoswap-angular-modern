@@ -16,6 +16,20 @@ import {
 import { NotificationService } from './notification.service';
 import { PriceService } from './price.service';
 
+const SUPPORTED_TOKENS = {
+  bnb: { symbol: 'BNB', address: null, decimals: 18 },
+  eth: {
+    symbol: 'ETH',
+    address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8',
+    decimals: 18
+  },
+  usdt: {
+    symbol: 'USDT',
+    address: '0x55d398326f99059fF775485246999027B3197955',
+    decimals: 18
+  }
+} as const;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -36,6 +50,7 @@ export class WalletService {
   private readonly modalOpen = signal<boolean>(false);
   private readonly _connectingWalletId = signal<string>('');
   private readonly _isRefreshingBalance = signal<boolean>(false);
+  private readonly _tokenBalances = signal<Map<string, string>>(new Map());
 
   // Ethereum provider
   private ethereum: EthereumProvider | null = null;
@@ -72,7 +87,7 @@ export class WalletService {
     this.walletState().chainId
   );
   
-  readonly balance = computed(() => 
+  readonly balance = computed(() =>
     this.walletState().balance
   );
 
@@ -81,14 +96,22 @@ export class WalletService {
     return balance ? `${parseFloat(balance).toFixed(4)} BNB` : '0.0000 BNB';
   });
 
-  // NEW: Portfolio calculation computed signals
-  readonly bnbBalance = computed(() => parseFloat(this.balance() || '0'));
-  
+  // Token balance map
+  readonly tokenBalances = computed(() => this._tokenBalances());
+
+  readonly bnbBalance = computed(() => {
+    return parseFloat(this.tokenBalances().get('bnb') || '0');
+  });
+
   readonly portfolioValueUSD = computed(() => {
-    const bnbAmount = this.bnbBalance();
-    if (bnbAmount === 0) return 0;
-    
-    return this.priceService.calculateUSDValue('bnb', bnbAmount);
+    let total = 0;
+    for (const [symbol, amount] of this.tokenBalances()) {
+      const num = parseFloat(amount);
+      if (num > 0) {
+        total += this.priceService.calculateUSDValue(symbol, num);
+      }
+    }
+    return total;
   });
 
   readonly portfolioDisplay = computed(() => {
@@ -426,26 +449,33 @@ export class WalletService {
     try {
       const address = this.address();
       console.log('📍 WalletService: Getting balance for:', address);
-      console.log('💰 WalletService: Requesting balance from blockchain...');
-      
+
+      const tokenMap = new Map<string, string>();
+
+      // Native BNB balance
       const balanceWei = await this.ethereum.request({
         method: MetaMaskMethod.GET_BALANCE,
         params: [address, 'latest']
       });
+      console.log('💰 WalletService: Raw BNB balance (hex):', balanceWei);
+      const bnbBalance = this.weiToBNB(balanceWei);
+      tokenMap.set('bnb', bnbBalance);
 
-      console.log('💰 WalletService: Raw balance (hex):', balanceWei);
-
-      // Convert from Wei to BNB
-      const balanceEth = this.weiToBNB(balanceWei);
-      console.log('💰 WalletService: Converted balance (BNB):', balanceEth);
-      
       this.walletState.update(state => ({
         ...state,
-        balance: balanceEth
+        balance: bnbBalance
       }));
 
-      console.log('✅ WalletService: Balance updated successfully');
-      console.log('💰 WalletService: Current balance signal value:', this.balance());
+      // ERC20 token balances
+      for (const [symbol, info] of Object.entries(SUPPORTED_TOKENS)) {
+        if (!info.address) continue;
+        const amount = await this.getErc20Balance(info.address, info.decimals);
+        tokenMap.set(symbol, amount);
+      }
+
+      this._tokenBalances.set(tokenMap);
+
+      console.log('✅ WalletService: Balance map updated', tokenMap);
 
     } catch (error) {
       console.error('🚨 WalletService: Error updating balance:', error);
@@ -672,6 +702,32 @@ export class WalletService {
       return bnbValue.toFixed(6);
     } catch (error) {
       console.error('🚨 WalletService: Error converting wei to BNB:', error);
+      return '0';
+    }
+  }
+
+  private async getErc20Balance(
+    tokenAddress: string,
+    decimals: number
+  ): Promise<string> {
+    if (!this.ethereum) return '0';
+
+    try {
+      const address = this.address();
+      const data =
+        '0x70a08231' + address.slice(2).padStart(64, '0');
+      const result = await this.ethereum.request({
+        method: 'eth_call',
+        params: [{ to: tokenAddress, data }, 'latest']
+      });
+      const clean = (result as string).startsWith('0x')
+        ? (result as string).slice(2)
+        : (result as string);
+      const value = BigInt('0x' + clean);
+      const amount = Number(value) / Math.pow(10, decimals);
+      return amount.toString();
+    } catch (error) {
+      console.error('🚨 WalletService: Failed to fetch token balance', tokenAddress, error);
       return '0';
     }
   }

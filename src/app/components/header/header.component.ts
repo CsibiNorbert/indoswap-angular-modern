@@ -304,7 +304,7 @@ export class HeaderComponent {
   readonly isConnected = this.walletService.isConnected;
   readonly isConnecting = this.walletService.isConnecting;
   readonly shortAddress = this.walletService.shortAddress;
-  readonly balance = this.walletService.balance; // Use BNB balance for now
+  readonly portfolioDisplay = this.walletService.portfolioDisplay;
   readonly isCorrectNetwork = this.walletService.isCorrectNetwork;
 
   onConnect(): void {
@@ -318,12 +318,12 @@ export class HeaderComponent {
 
   async onRefreshBalance(): Promise<void> {
     try {
-      console.log('🔄 Header: Refreshing balance...');
-      await this.walletService.refreshBalance();
-      this.notificationService.showSuccess('💰 Balance updated!');
+      console.log('🔄 Header: Refreshing portfolio...');
+      await this.walletService.refreshPortfolio();
+      this.notificationService.showSuccess('💰 Portfolio updated!');
     } catch (error) {
       console.error('🚨 Header: Refresh failed:', error);
-      this.notificationService.showError('Failed to refresh balance');
+      this.notificationService.showError('Failed to refresh portfolio');
     }
   }
 
@@ -333,17 +333,7 @@ export class HeaderComponent {
   }
 
   getBalanceDisplay(): string {
-    const balanceValue = parseFloat(this.balance());
-    
-    // For debugging
-    console.log('🔍 Header: Balance value:', balanceValue, 'Raw balance:', this.balance());
-    
-    if (balanceValue === 0 || isNaN(balanceValue)) {
-      return '$0.00';
-    }
-    
-    // For now, show BNB amount - we'll add USD conversion later
-    return `${balanceValue.toFixed(4)} BNB`;
+    return this.portfolioDisplay();
   }
 
   getNetworkName(): string {
