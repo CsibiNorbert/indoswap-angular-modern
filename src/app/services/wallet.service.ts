@@ -16,6 +16,21 @@ import {
 import { NotificationService } from './notification.service';
 import { PriceService } from './price.service';
 
+// Map of supported tokens with contract addresses and decimals
+const SUPPORTED_TOKENS = new Map<string, { address: string; decimals: number }>([
+  ['bnb', { address: '', decimals: 18 }],
+  // Binance-Peg Ethereum Token
+  ['eth', { address: '0x2170ed0880ac9a755fd29b2688956bd959f933f8', decimals: 18 }],
+  // Binance-Peg BSC-USD Tether
+  ['usdt', { address: '0x55d398326f99059ff775485246999027b3197955', decimals: 18 }],
+  // Binance-Peg BUSD Token
+  ['busd', { address: '0xe9e7cea3dedca5984780bafc599bd69add087d56', decimals: 18 }],
+  // Binance-Peg USD Coin
+  ['usdc', { address: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', decimals: 18 }],
+  // Chainlink Token
+  ['link', { address: '0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD', decimals: 18 }]
+]);
+
 @Injectable({
   providedIn: 'root'
 })
@@ -31,6 +46,11 @@ export class WalletService {
     chainId: BSC_MAINNET_CHAIN_ID,
     balance: '0'
   });
+
+  // Map of token balances (symbol -> amount as string)
+  private readonly tokenBalances = signal<Map<string, string>>(new Map(
+    Array.from(SUPPORTED_TOKENS.keys()).map(sym => [sym, '0'])
+  ));
 
   // Modal and UI state
   private readonly modalOpen = signal<boolean>(false);
@@ -83,12 +103,18 @@ export class WalletService {
 
   // NEW: Portfolio calculation computed signals
   readonly bnbBalance = computed(() => parseFloat(this.balance() || '0'));
-  
+
   readonly portfolioValueUSD = computed(() => {
-    const bnbAmount = this.bnbBalance();
-    if (bnbAmount === 0) return 0;
-    
-    return this.priceService.calculateUSDValue('bnb', bnbAmount);
+    const balances = this.tokenBalances();
+    let total = 0;
+
+    for (const [symbol, amountStr] of balances) {
+      const amount = parseFloat(amountStr || '0');
+      if (amount === 0) continue;
+      total += this.priceService.calculateUSDValue(symbol, amount);
+    }
+
+    return total;
   });
 
   readonly portfolioDisplay = computed(() => {
@@ -406,7 +432,8 @@ export class WalletService {
     try {
       const address = this.address();
       console.log('📍 WalletService: Getting balance for:', address);
-      
+
+      // Native BNB balance
       const balanceWei = await this.ethereum.request({
         method: MetaMaskMethod.GET_BALANCE,
         params: [address, 'latest']
@@ -414,19 +441,25 @@ export class WalletService {
 
       console.log('💰 WalletService: Balance in Wei:', balanceWei);
 
-      // Convert from Wei to BNB
-      const balanceEth = this.weiToEth(balanceWei);
-      console.log('💰 WalletService: Balance in BNB:', balanceEth);
-      
+      const bnbBalance = this.weiToEth(balanceWei);
+      console.log('💰 WalletService: Balance in BNB:', bnbBalance);
+
       this.walletState.update(state => ({
         ...state,
-        balance: balanceEth
+        balance: bnbBalance
       }));
 
-      // Log portfolio value for debugging
-      const usdValue = this.priceService.calculateUSDValue('bnb', parseFloat(balanceEth));
-      const formattedValue = this.priceService.formatUSDValue(usdValue);
-      console.log('💰 WalletService: Portfolio value USD:', formattedValue);
+      const balancesMap = new Map<string, string>();
+      balancesMap.set('bnb', bnbBalance);
+
+      // ERC20 token balances
+      for (const [symbol, info] of SUPPORTED_TOKENS.entries()) {
+        if (symbol === 'bnb') continue;
+        const bal = await this.getErc20Balance(info.address, info.decimals);
+        balancesMap.set(symbol, bal);
+      }
+
+      this.tokenBalances.set(balancesMap);
 
       console.log('✅ WalletService: Balance updated successfully');
 
@@ -586,6 +619,26 @@ export class WalletService {
       return eth.toFixed(6);
     } catch (error) {
       console.error('🚨 WalletService: Error converting Wei to ETH:', error);
+      return '0';
+    }
+  }
+
+  // Generic ERC20 balance query
+  private async getErc20Balance(tokenAddress: string, decimals: number): Promise<string> {
+    if (!this.ethereum) return '0';
+    try {
+      const address = this.address();
+      const methodId = '0x70a08231'; // balanceOf(address)
+      const data = methodId + address.slice(2).padStart(64, '0');
+      const result: string = await this.ethereum.request({
+        method: 'eth_call',
+        params: [{ to: tokenAddress, data }, 'latest']
+      });
+      const balance = BigInt(result);
+      const value = Number(balance) / Math.pow(10, decimals);
+      return value.toString();
+    } catch (error) {
+      console.error('🚨 WalletService: Failed to fetch ERC20 balance:', error);
       return '0';
     }
   }
